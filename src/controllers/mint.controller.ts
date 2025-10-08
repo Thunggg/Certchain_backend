@@ -1,5 +1,6 @@
-import { Request, Response } from 'express'
+import { NextFunction, Request, Response } from 'express'
 
-export const mintCertificate = async (req: Request, res: Response) => {
-  return res.status(200).json({ message: 'Certificate minted successfully' })
+export const mintCertificateController = async (req: Request, res: Response, next: NextFunction) => {
+  const file = req.body
+  console.log(file)
 }

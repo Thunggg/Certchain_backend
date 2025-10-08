@@ -1,8 +1,9 @@
 import { Router } from 'express'
-import { mintCertificate } from '~/controllers/mint.controller'
+import { mintCertificateController } from '~/controllers/mint.controller'
+import { wrapRequestHandler } from '~/ultis/handlers'
 
 const mintRouter = Router()
 
-mintRouter.post('/certificate', mintCertificate)
+mintRouter.post('/certificate', wrapRequestHandler(mintCertificateController))
 
 export default mintRouter
