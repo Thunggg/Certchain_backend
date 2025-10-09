@@ -65,7 +65,7 @@ export const addWatermark = async (buffer: Buffer, mimetype: string) => {
     const watermarkBytes  = fs.readFileSync(watermarkPath)
     const watermarkImage  = await pdfDoc.embedPng(watermarkBytes)
 
-    // 3️⃣ Tùy chỉnh tỉ lệ watermark
+    // Tùy chỉnh tỉ lệ watermark
     const scale = 0.3 // kích thước watermark
     const stepXFactor = 2.5 // khoảng cách ngang (theo lần kích thước watermark)
     const stepYFactor = 1.8 // khoảng cách dọc (theo lần kích thước watermark)

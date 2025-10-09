@@ -50,3 +50,13 @@ export class NotFoundError extends BaseError {
     super(message)
   }
 }
+
+  export class BadRequestError extends BaseError {
+    readonly statusCode = HTTP_STATUS.BAD_REQUEST
+    readonly errorCode = ErrorCodes.BAD_REQUEST
+    readonly isOperational = true
+    constructor(message: string) {
+      super(message)
+    }
+  }
+

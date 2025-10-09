@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 import path from 'path'
+import { BadRequestError } from '~/ultis/CustomErrors'
 import { saveFile } from '~/ultis/file'
 import { addWatermark } from '~/ultis/Watermark'
 
@@ -9,6 +10,10 @@ type MintParams = {
 }
 
 export const mintCertificateService = async ({ owner, file }: MintParams) => {
+  if(file.mimetype !== 'application/pdf' || !file.mimetype.startsWith("image/")) {
+    throw new BadRequestError('File type not supported')
+  }
+
   // 1) hash file (SHA256)
   const fileHashHex = createHash('sha256').update(file.buffer).digest('hex')
   const fileHashBytes32 = '0x' + fileHashHex

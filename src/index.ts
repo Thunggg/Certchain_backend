@@ -3,6 +3,7 @@ import express from 'express'
 import bodyParser from 'body-parser'
 import mintRouter from './routes/certificate.route'
 import multer from 'multer'
+import { errorHandler } from './middlewares/error.middlewares'
 
 const app = express()
 const upload = multer()
@@ -12,6 +13,8 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
 app.use('/mint', upload.single('file'), mintRouter)
+
+app.use(errorHandler)
 
 const PORT = Number(process.env.PORT || 3000)
 app.listen(PORT, () => {
