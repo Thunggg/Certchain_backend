@@ -1,15 +1,17 @@
 import 'dotenv/config'
 import express from 'express'
 import bodyParser from 'body-parser'
-import mintRouter from './routes/mint'
+import mintRouter from './routes/certificate.route'
+import multer from 'multer'
 
 const app = express()
+const upload = multer()
 
 // body parser
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
-app.use('/mint', mintRouter)
+app.use('/mint', upload.single('file'), mintRouter)
 
 const PORT = Number(process.env.PORT || 3000)
 app.listen(PORT, () => {
