@@ -1,5 +1,6 @@
 import { createHash } from 'crypto'
 import path from 'path'
+import { uploadToCloudinary } from '~/helpers/cloudinary'
 import { BadRequestError } from '~/ultis/CustomErrors'
 import { saveFile } from '~/ultis/file'
 import { addWatermark } from '~/ultis/Watermark'
@@ -10,8 +11,6 @@ type MintParams = {
 }
 
 export const mintCertificateService = async ({ owner, file }: MintParams) => {
-  console.log('file', file.mimetype)
-
   if(file.mimetype !== 'application/pdf' && !file.mimetype.startsWith("image/")) {
     throw new BadRequestError('File type not supported')
   }
@@ -19,7 +18,6 @@ export const mintCertificateService = async ({ owner, file }: MintParams) => {
   // 1) hash file (SHA256)
   const fileHashHex = createHash('sha256').update(file.buffer).digest('hex')
   const fileHashBytes32 = '0x' + fileHashHex
-
 
   // 2) Watermark + lưu file vào public/uploads
   const watermarkedBuffer = await addWatermark(file.buffer, file.mimetype)
@@ -30,6 +28,15 @@ export const mintCertificateService = async ({ owner, file }: MintParams) => {
 
   await saveFile(outPath, watermarkedBuffer as Buffer)
 
+
+  // 3️⃣ Upload Cloudinary
+  const fileUrl = await uploadToCloudinary(
+    watermarkedBuffer as Buffer,
+    'certificates',
+    fileHashHex
+  )
+
+  console.log('fileUrl', fileUrl)
 
   // 3) Ký số hash bằng private key issuer
 
