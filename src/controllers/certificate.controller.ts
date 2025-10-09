@@ -9,7 +9,7 @@ export const mintCertificateController = async (req: Request, res: Response, nex
 
   await mintCertificateService({ owner: ownerAddress, file: req.file })
 
-  return res.status(200).json({
+  res.status(200).json({
     message: 'Certificate minted successfully'
   })
 }

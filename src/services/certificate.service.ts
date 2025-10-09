@@ -10,7 +10,9 @@ type MintParams = {
 }
 
 export const mintCertificateService = async ({ owner, file }: MintParams) => {
-  if(file.mimetype !== 'application/pdf' || !file.mimetype.startsWith("image/")) {
+  console.log('file', file.mimetype)
+
+  if(file.mimetype !== 'application/pdf' && !file.mimetype.startsWith("image/")) {
     throw new BadRequestError('File type not supported')
   }
 

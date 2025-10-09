@@ -4,6 +4,7 @@ import bodyParser from 'body-parser'
 import mintRouter from './routes/certificate.route'
 import multer from 'multer'
 import { errorHandler } from './middlewares/error.middlewares'
+import path from 'path'
 
 const app = express()
 const upload = multer()

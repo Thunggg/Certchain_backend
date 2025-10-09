@@ -30,8 +30,8 @@ export const addWatermark = async (buffer: Buffer, mimetype: string) => {
     const overlay = new Jimp({ width: width * 3, height: height * 3, color: 0x00000000 })
 
     // Khoảng cách giữa các watermark
-    const stepX = 300
-    const stepY = 200
+    const stepX = 100
+    const stepY = 100
 
     // 4️⃣ In watermark theo dạng lặp
     for (let y = -height; y < height * 2; y += stepY) {
@@ -47,7 +47,7 @@ export const addWatermark = async (buffer: Buffer, mimetype: string) => {
     overlay.rotate(45)
 
     // 6️⃣ Gộp overlay vào ảnh gốc
-    image.composite(overlay, -width * 0.75, -height * 0.75, {
+    image.composite(overlay, (width - overlay.bitmap.width) / 2, (height - overlay.bitmap.height) / 2, {
       mode: BlendMode.SRC_OVER,
       opacitySource: 0.8
     })
