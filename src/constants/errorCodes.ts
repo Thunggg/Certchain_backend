@@ -7,6 +7,7 @@ export const ErrorCodes: {
   NOT_FOUND: number
   CONFLICT: number
   BAD_REQUEST: number
+  BLOCKCHAIN_ERROR: number
 } = {
   SUCCESS: 0, // Request thành công (dùng kèm HTTP 200/201)
   INTERNAL: 1000, // Lỗi hệ thống nội bộ (500 Internal Server Error)
@@ -15,5 +16,6 @@ export const ErrorCodes: {
   AUTHORIZATION: 1003, // Lỗi phân quyền (403 Forbidden – login rồi nhưng không có quyền)
   NOT_FOUND: 1004, // Không tìm thấy tài nguyên (404 Not Found)
   CONFLICT: 1005, // Xung đột dữ liệu (409 Conflict – email/username đã tồn tại)
-  BAD_REQUEST: 1006 // Yêu cầu sai cấu trúc hoặc dữ liệu không hợp lệ (400 Bad Request)
+  BAD_REQUEST: 1006, // Yêu cầu sai cấu trúc hoặc dữ liệu không hợp lệ (400 Bad Request)
+  BLOCKCHAIN_ERROR: 1007 // Lỗi liên quan đến blockchain (502 Bad Gateway)
 } as const

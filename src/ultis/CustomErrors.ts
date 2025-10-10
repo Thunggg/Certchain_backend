@@ -60,3 +60,47 @@ export class NotFoundError extends BaseError {
     }
   }
 
+export class UploadError extends BaseError {
+  readonly statusCode = HTTP_STATUS.BAD_REQUEST
+  readonly errorCode = ErrorCodes.BAD_REQUEST
+  readonly isOperational = true
+  constructor(message = 'Upload error') {
+    super(message)
+  }
+}
+
+export class WatermarkError extends BaseError {
+  readonly statusCode = HTTP_STATUS.BAD_REQUEST
+  readonly errorCode = ErrorCodes.BAD_REQUEST
+  readonly isOperational = true
+  constructor(message = 'Watermark error') {
+    super(message)
+  }
+}
+
+export class MetadataError extends BaseError {
+  readonly statusCode = HTTP_STATUS.BAD_REQUEST
+  readonly errorCode = ErrorCodes.BAD_REQUEST
+  readonly isOperational = true
+  constructor(message = 'Metadata error') {
+    super(message)
+  }
+}
+
+export class BlockchainError extends BaseError {
+  readonly statusCode = HTTP_STATUS.BAD_GATEWAY
+  readonly errorCode = ErrorCodes.BLOCKCHAIN_ERROR
+  readonly isOperational = true
+  constructor(message = 'Blockchain error') {
+    super(message)
+  }
+}
+
+export class ConfigError extends BaseError {
+  readonly statusCode = HTTP_STATUS.INTERNAL_SERVER_ERROR
+  readonly errorCode = ErrorCodes.INTERNAL
+  readonly isOperational = true
+  constructor(message = 'Invalid configuration') {
+    super(message)
+  }
+}
