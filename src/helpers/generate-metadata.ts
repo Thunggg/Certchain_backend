@@ -1,30 +1,17 @@
-
-export interface CertificateMetadataInput {
-  name: string                 // Tên chứng chỉ hoặc tài sản sáng tạo
-  description: string          // Mô tả ngắn gọn
-  issuerName: string           // Tên tổ chức cấp
-  issuerWallet: string         // Ví tổ chức cấp
-  issueDate: string            // Ngày cấp (ISO string)
-
-  fileUrl: string              // URL PDF (Cloudinary / IPFS)
-  previewImageUrl: string      // URL ảnh xem trước (thumbnail)
-
-  hash?: string                // Nếu đã tính trước hash (SHA-256)
-
-  type?: 0 | 1 // Loại asset
-}
-
-export const generateMetadataJSON  = (data: CertificateMetadataInput) => {
-
+export const generateERC721Metadata = (params: {
+  name: string
+  description: string
+  image?: string
+  animation_url?: string
+  attributes?: Array<{ trait_type: string; value: string }>
+  external_url?: string
+}) => {
   return {
-    name: data.name,
-    description: data.description,
-    issuerName: data.issuerName,
-    issuerWallet: data.issuerWallet,
-    issueDate: data.issueDate,
-    fileUrl: data.fileUrl,
-    previewImageUrl: data.previewImageUrl,
-    hash: data.hash,
-    type: data.type,
+    name: params.name,
+    description: params.description,
+    image: params.image,
+    animation_url: params.animation_url,
+    attributes: params.attributes || [],
+    external_url: params.external_url
   }
 }

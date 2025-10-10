@@ -62,7 +62,7 @@ export const errorHandler = (err: unknown, req: Request, res: Response, next: Ne
 
   //default error
   const apiError = new ApiError(
-    ErrorCodes.AUTHENTICATION,
+    ErrorCodes.INTERNAL,
     (err as ApiErrorResponseWithStatus).msg.message || 'Internal server error',
     (err as ApiErrorResponseWithStatus).msg.status || HTTP_STATUS.INTERNAL_SERVER_ERROR,
     new Date().toISOString(),

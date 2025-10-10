@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
+import { ConflictError } from '~/ultis/CustomErrors'
 
 // Cấu hình Cloudinary
 cloudinary.config({
@@ -9,6 +10,18 @@ cloudinary.config({
   secure: true
 })
 
+const isFileExist = async (folder: string, publicId: string, resourceType: 'image' | 'raw'): Promise<boolean> => {
+  try {
+    await cloudinary.api.resource(`${folder}/${publicId}`, { resource_type: resourceType })
+    return true
+  } catch (error: any) {
+    const httpCode = error?.http_code || error?.error?.http_code
+    if (httpCode === 404) {
+      return false
+    }
+    throw error
+  }
+}
 
 /**
  * Upload buffer file lên Cloudinary
@@ -22,6 +35,12 @@ export const uploadToCloudinary = async (
   resourceType: 'image' | 'raw',
   fileName?: string
 ): Promise<string> => {
+  const checkFile = await isFileExist(folder, fileName as string, resourceType)
+
+  if (checkFile) {
+    throw new ConflictError('File already exists!')
+  }
+
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -30,10 +49,13 @@ export const uploadToCloudinary = async (
         resource_type: resourceType, // cho phép upload cả ảnh và PDF
         use_filename: true,
         unique_filename: false,
-        overwrite: true,
+        overwrite: false
       },
       (err, result) => {
-        if (err) return reject(err)
+        if (err) {
+          console.error('Cloudinary upload error:', err)
+          return reject(err)
+        }
         resolve(result?.secure_url || '')
       }
     )
@@ -47,6 +69,12 @@ export const uploadMetadataToCloudinary = async (
   folder: string,
   fileName: string
 ): Promise<string> => {
+  const checkFile = await isFileExist(folder, fileName as string, 'raw')
+
+  if (checkFile) {
+    throw new ConflictError('File already exists!')
+  }
+
   const jsonString = JSON.stringify(metadata, null, 2)
   const buffer = Buffer.from(jsonString)
   const stream = Readable.from(buffer)
@@ -60,10 +88,13 @@ export const uploadMetadataToCloudinary = async (
         format: 'json',
         use_filename: true,
         unique_filename: false,
-        overwrite: true,
+        overwrite: false
       },
       (err, result) => {
-        if (err) return reject(err)
+        if (err) {
+          console.error('Cloudinary upload error:', err)
+          return reject(err)
+        }
         resolve(result?.secure_url || '')
       }
     )
