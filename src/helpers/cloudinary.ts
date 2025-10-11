@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
+import { CertificateModel } from '~/models/schemas/Certificate'
 import { ConflictError } from '~/ultis/CustomErrors'
 
 // Cấu hình Cloudinary
@@ -36,8 +37,15 @@ export const uploadToCloudinary = async (
   fileName?: string
 ): Promise<string> => {
   const checkFile = await isFileExist(folder, fileName as string, resourceType)
-
   if (checkFile) {
+    const exist = await CertificateModel.findOne({ publishedHash: fileName })
+      .select('status')
+      .lean()
+
+    if (exist && exist.status !== 'minted') {
+      return cloudinary.url(`${folder}/${fileName}`, { secure: true })
+    }
+
     throw new ConflictError('File already exists!')
   }
 
