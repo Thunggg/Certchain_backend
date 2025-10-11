@@ -3,7 +3,7 @@ import { NextFunction, Request, Response } from 'express'
 import { HTTP_STATUS } from '~/constants/httpStatus'
 import { mintCertificateService, verifyCertificateService } from '~/services/certificate.service'
 import { ApiSuccess } from '~/ultis/ApiSuccess'
-import { NotFoundError } from '~/ultis/CustomErrors'
+import { BadRequestError, NotFoundError } from '~/ultis/CustomErrors'
 import { ParamsDictionary } from 'express-serve-static-core'
 import { mintCertificateReqBody, verifyCertificateReqBody } from '~/models/requests/certificate'
 
@@ -21,6 +21,8 @@ export const verifyCertificateController = async (req: Request<ParamsDictionary,
   const file = req.file as Express.Multer.File
 
   const result = await verifyCertificateService({ tokenId, file })
+
+  if(result.onChainMatch === false) throw new NotFoundError('Certificate not found')
 
   res.status(200).json(new ApiSuccess(200, 'Certificate verified successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
 }

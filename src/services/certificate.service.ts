@@ -6,7 +6,7 @@ import { ethers, TransactionReceipt } from 'ethers'
 import { contractCertificateSBT } from '~/contracts/ABI/CertificateSBT'
 import { CertificateModel } from '~/models/schemas/Certificate'
 
-export const mintCertificateService = async ({ owner, file }: { owner: string, file: Express.Multer.File }) => {
+export const mintCertificateService = async ({ owner, file }: { owner: string; file: Express.Multer.File }) => {
   if (file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
     throw new BadRequestError('File type not supported')
   }
@@ -17,7 +17,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string, f
 
   // 1) hash file (SHA256)
   const fileHashHex = createHash('sha256').update(file.buffer).digest('hex')
-  const fileHashBytes32 = '0x' + fileHashHex as `0x${string}`
+  const fileHashBytes32 = ('0x' + fileHashHex) as `0x${string}`
 
   // 2) Watermark + lưu file vào public/uploads
   const watermarkedBuffer = await addWatermark(file.buffer, file.mimetype)
@@ -59,7 +59,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string, f
   const wallet = new ethers.Wallet(privateKey as string, provider)
   const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, wallet)
 
-  let receipt: TransactionReceipt 
+  let receipt: TransactionReceipt
   try {
     const [tx] = await Promise.all([
       contract.mintCertificate(owner, fileHashBytes32, metadataUrl),
@@ -82,7 +82,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string, f
         { new: true, upsert: true }
       )
     ])
-    
+
     receipt = await tx.wait()
   } catch (err) {
     throw new BadRequestError('Minting certificate failed!')
@@ -101,20 +101,22 @@ export const mintCertificateService = async ({ owner, file }: { owner: string, f
     }
   }
 
-
-  await CertificateModel.updateOne({
-    fileHash: fileHashBytes32
-  }, {
-    tokenId,
-    owner,
-    contractAddress,
-    chainId: Number(process.env.CHAIN_ID || 11155111), // sepoliaETH testnet
-    tokenURI: metadataUrl,
-    fileUrl,
-    metadataUrl,
-    transactionHash: receipt.hash,
-    status: tokenId ? 'minted' : 'failed'
-  })
+  await CertificateModel.updateOne(
+    {
+      fileHash: fileHashBytes32
+    },
+    {
+      tokenId,
+      owner,
+      contractAddress,
+      chainId: Number(process.env.CHAIN_ID || 11155111), // sepoliaETH testnet
+      tokenURI: metadataUrl,
+      fileUrl,
+      metadataUrl,
+      transactionHash: receipt.hash,
+      status: tokenId ? 'minted' : 'failed'
+    }
+  )
 
   return {
     tokenId,
@@ -126,14 +128,14 @@ export const mintCertificateService = async ({ owner, file }: { owner: string, f
   }
 }
 
-export const verifyCertificateService = async ({ tokenId, file }: { tokenId: number, file: Express.Multer.File }) => {
-  if(file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
+export const verifyCertificateService = async ({ tokenId, file }: { tokenId: number; file: Express.Multer.File }) => {
+  if (file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
     throw new BadRequestError('File type not supported')
   }
 
   // 1) Tính SHA256
   const fileHashHex = createHash('sha256').update(file.buffer).digest('hex')
-  const fileHashBytes32 = '0x' + fileHashHex as `0x${string}`
+  const fileHashBytes32 = ('0x' + fileHashHex) as `0x${string}`
 
   // 2) Kiểm tra fileHashBytes32 có khớp với hash trong contract không
   const rpcUrl = process.env.RPC_URL
@@ -145,17 +147,17 @@ export const verifyCertificateService = async ({ tokenId, file }: { tokenId: num
   const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, signer)
 
   let onChainMatch = false
-  try{
-    onChainMatch = await contract.verifyCertificate(tokenId, fileHashBytes32)
-  }catch(err){
+  try {
+    onChainMatch = await contract.verifyHash(tokenId, fileHashBytes32)
+  } catch (err) {
     throw new BadRequestError('Verification failed!')
   }
 
   // 3) Đọc tokenURI từ contract
   let tokenURI: string | undefined
-  try{
+  try {
     tokenURI = await contract.tokenURI(tokenId)
-  }catch(err){
+  } catch (err) {
     throw new BadRequestError('Verification failed!')
   }
 
@@ -165,5 +167,4 @@ export const verifyCertificateService = async ({ tokenId, file }: { tokenId: num
     onChainMatch,
     tokenURI
   }
-
 }
