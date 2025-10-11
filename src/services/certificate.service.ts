@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 import { uploadMetadataToCloudinary, uploadToCloudinary } from '~/helpers/cloudinary'
-import { BadRequestError } from '~/ultis/CustomErrors'
+import { BadRequestError, NotFoundError } from '~/ultis/CustomErrors'
 import { addWatermark } from '~/ultis/Watermark'
 import { ethers, TransactionReceipt } from 'ethers'
 import { contractCertificateSBT } from '~/contracts/ABI/CertificateSBT'
@@ -136,6 +136,20 @@ export const verifyCertificateService = async ({ tokenId, file }: { tokenId: num
   // 1) Tính SHA256
   const fileHashHex = createHash('sha256').update(file.buffer).digest('hex')
   const fileHashBytes32 = ('0x' + fileHashHex) as `0x${string}`
+
+  if (!tokenId) {
+  const cert = await CertificateModel
+    .findOne({ fileHash: fileHashBytes32 })
+    .select('tokenId')
+    .lean()
+
+  if (cert?.tokenId) {
+    tokenId = Number(cert.tokenId)
+  }
+  else{
+    throw new NotFoundError('Certificate not found')
+  }
+}
 
   // 2) Kiểm tra fileHashBytes32 có khớp với hash trong contract không
   const rpcUrl = process.env.RPC_URL

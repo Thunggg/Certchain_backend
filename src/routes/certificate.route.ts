@@ -6,7 +6,7 @@ import { wrapRequestHandler } from '~/ultis/handlers'
 const mintRouter = Router()
 
 mintRouter.post('/certificate', mintCertificateValidator, uploadFileValidator,wrapRequestHandler(mintCertificateController))
-mintRouter.post('/verify-certificate', verifyCertificateValidator, uploadFileValidator, wrapRequestHandler(verifyCertificateController))
+mintRouter.post('/verify-certificate', uploadFileValidator, wrapRequestHandler(verifyCertificateController))
 
 
 export default mintRouter
