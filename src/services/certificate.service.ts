@@ -5,10 +5,16 @@ import { addWatermark } from '~/ultis/Watermark'
 import { ethers, TransactionReceipt } from 'ethers'
 import { contractCertificateSBT } from '~/contracts/ABI/CertificateSBT'
 import { CertificateModel } from '~/models/schemas/Certificate'
+import type { EthersError } from 'ethers'
 
 export const mintCertificateService = async ({ owner, file }: { owner: string; file: Express.Multer.File }) => {
   if (file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
     throw new BadRequestError('File type not supported')
+  }
+
+  const x = ethers.getAddress(owner.toLowerCase())
+  if(x !== owner){
+    throw new BadRequestError('Owner address is not valid')
   }
 
   // 0) xác định loại file (ảnh / PDF)
@@ -19,12 +25,16 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   const fileHashHex = createHash('sha256').update(file.buffer).digest('hex')
   const fileHashBytes32 = ('0x' + fileHashHex) as `0x${string}`
 
-  // 2) Watermark + lưu file vào public/uploads
+  // 2) Watermark + hash file + lưu file vào public/uploads
   const watermarkedBuffer = await addWatermark(file.buffer, file.mimetype)
+  const watermarkedFileHashHex = createHash('sha256')
+    .update(watermarkedBuffer as Buffer)
+    .digest('hex')
+  const watermarkedFileHashBytes32 = ('0x' + watermarkedFileHashHex) as `0x${string}`
 
   // 3) Upload Cloudinary
   const [fileUrl] = await Promise.all([
-    uploadToCloudinary(watermarkedBuffer as Buffer, 'certificates', resourceType, fileHashHex)
+    uploadToCloudinary(watermarkedBuffer as Buffer, 'certificates', resourceType, watermarkedFileHashBytes32)
   ])
 
   // 4) Tạo metadata JSON
@@ -40,7 +50,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
       { trait_type: 'issuerName', value: 'FPT University' },
       { trait_type: 'issuerWallet', value: owner },
       { trait_type: 'issueDate', value: new Date().toISOString() },
-      { trait_type: 'fileHash', value: fileHashBytes32 },
+      { trait_type: 'fileHash', value: watermarkedFileHashBytes32 },
       { trait_type: 'type', value: 'certificate' }
     ],
     // Sau này làm trang verify thì thêm vào
@@ -48,7 +58,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   }
 
   // 5) Upload metadata JSON vào Cloudinary
-  const metadataUrl = await uploadMetadataToCloudinary(metadata, 'metadata', fileHashHex)
+  const metadataUrl = await uploadMetadataToCloudinary(metadata, 'metadata', watermarkedFileHashHex)
 
   // 6) mint NFT on-chain
   const rpcUrl = process.env.RPC_URL
@@ -62,11 +72,13 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   let receipt: TransactionReceipt
   try {
     const [tx] = await Promise.all([
-      contract.mintCertificate(owner, fileHashBytes32, metadataUrl),
+      contract.mintCertificate(owner, watermarkedFileHashBytes32, metadataUrl),
       CertificateModel.findOneAndUpdate(
-        { fileHash: fileHashBytes32 },
+        { publishedHash: watermarkedFileHashBytes32 },
         {
           $set: {
+            publishedHash: watermarkedFileHashBytes32,
+            originalHash: fileHashBytes32,
             owner,
             contractAddress,
             chainId: Number(process.env.CHAIN_ID || 11155111), // sepoliaETH testnet
@@ -85,6 +97,12 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
 
     receipt = await tx.wait()
   } catch (err) {
+    const e = err as EthersError
+
+    if (e.code === 'INVALID_ARGUMENT' && e.message === 'address') {
+      throw new BadRequestError('Onwner address is not exists')
+    }
+
     throw new BadRequestError('Minting certificate failed!')
   }
 
@@ -103,9 +121,11 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
 
   await CertificateModel.updateOne(
     {
-      fileHash: fileHashBytes32
+      publishedHash: watermarkedFileHashBytes32
     },
     {
+      originalHash: fileHashBytes32,
+      publishedHash: watermarkedFileHashBytes32,
       tokenId,
       owner,
       contractAddress,
@@ -120,7 +140,8 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
 
   return {
     tokenId,
-    hash: fileHashBytes32,
+    publishedHash: watermarkedFileHashBytes32,
+    originalHash: fileHashBytes32,
     tokenURI: metadataUrl,
     transactionHash: receipt.hash,
     qrUrl: '',
@@ -137,19 +158,21 @@ export const verifyCertificateService = async ({ tokenId, file }: { tokenId: num
   const fileHashHex = createHash('sha256').update(file.buffer).digest('hex')
   const fileHashBytes32 = ('0x' + fileHashHex) as `0x${string}`
 
-  if (!tokenId) {
-  const cert = await CertificateModel
-    .findOne({ fileHash: fileHashBytes32 })
-    .select('tokenId')
+  let cert = await CertificateModel.findOne({
+    $or: [{ publishedHash: fileHashBytes32 }, { originalHash: fileHashBytes32 }]
+  })
+    .select('tokenId publishedHash originalHash')
     .lean()
 
-  if (cert?.tokenId) {
+  if (!cert) throw new NotFoundError('Certificate not found in database')
+
+  // Nếu chưa có tokenId trong request, lấy từ DB
+  if (!tokenId && cert.tokenId) {
     tokenId = Number(cert.tokenId)
   }
-  else{
-    throw new NotFoundError('Certificate not found')
+  if (!tokenId) {
+    throw new BadRequestError('Missing tokenId for verification')
   }
-}
 
   // 2) Kiểm tra fileHashBytes32 có khớp với hash trong contract không
   const rpcUrl = process.env.RPC_URL
@@ -160,9 +183,13 @@ export const verifyCertificateService = async ({ tokenId, file }: { tokenId: num
   const signer = new ethers.Wallet(privateKey as string, provider)
   const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, signer)
 
+  // nếu fileHashBytes32 khớp với originalHash thì sử dụng publishedHash, nếu không thì sử dụng originalHash
+  const publishedHash = fileHashBytes32 === cert?.publishedHash ? fileHashBytes32 : cert?.publishedHash
+  const typeHash = fileHashBytes32 === cert?.originalHash ? 'original' : 'published'
+
   let onChainMatch = false
   try {
-    onChainMatch = await contract.verifyHash(tokenId, fileHashBytes32)
+    onChainMatch = await contract.verifyHash(tokenId, publishedHash)
   } catch (err) {
     throw new BadRequestError('Verification failed!')
   }
@@ -178,6 +205,7 @@ export const verifyCertificateService = async ({ tokenId, file }: { tokenId: num
   return {
     tokenId,
     hash: fileHashBytes32,
+    typeHash,
     onChainMatch,
     tokenURI
   }

@@ -3,7 +3,15 @@ export type CertificateStatus = 'minted' | 'pending' | 'failed'
 
 const CertificateSchema = new Schema(
   {
-    fileHash: {
+     // New: pre-watermark hash
+    originalHash: {
+      type: String,
+      required: true,
+      index: true,
+      match: /^0x[a-fA-F0-9]{64}$/
+    },
+    // New: post-watermark hash (used on-chain)
+    publishedHash: {
       type: String,
       required: true,
       unique: true,
