@@ -23,15 +23,18 @@ export const addWatermark = async (buffer: Buffer, mimetype: string) => {
     const watermark = await Jimp.read(watermarkPath)
 
     // resize watermark cho phù hợp (ví dụ 10% kích thước ảnh)
-    const scale = 0.1
+    const scale = Math.min(Math.max(width * 0.1, 50), 300) / width
     watermark.resize({ w: width * scale, h: height * scale })
 
     // Tạo lớp overlay riêng để chứa watermark
-    const overlay = new Jimp({ width: width * 3, height: height * 3, color: 0x00000000 })
+    const maxOverlaySize = 4096
+    const overlayWidth = Math.min(width * 2, maxOverlaySize)
+    const overlayHeight = Math.min(height * 2, maxOverlaySize)
+    const overlay = new Jimp({ width: overlayWidth, height: overlayHeight, color: 0x00000000 })
 
     // Khoảng cách giữa các watermark
-    const stepX = 100
-    const stepY = 100
+    const stepX = Math.max(Math.floor(width / 8), 80)
+    const stepY = Math.max(Math.floor(height / 8), 80)
 
     // 4️⃣ In watermark theo dạng lặp
     for (let y = -height; y < height * 2; y += stepY) {
@@ -61,9 +64,9 @@ export const addWatermark = async (buffer: Buffer, mimetype: string) => {
     const pages = pdfDoc.getPages()
 
     // Đọc ảnh watermark
-    const watermarkPath  = path.resolve(process.cwd(), 'public', 'uploads', 'watermark.png')
-    const watermarkBytes  = fs.readFileSync(watermarkPath)
-    const watermarkImage  = await pdfDoc.embedPng(watermarkBytes)
+    const watermarkPath = path.resolve(process.cwd(), 'public', 'uploads', 'watermark.png')
+    const watermarkBytes = fs.readFileSync(watermarkPath)
+    const watermarkImage = await pdfDoc.embedPng(watermarkBytes)
 
     // Tùy chỉnh tỉ lệ watermark
     const scale = 0.3 // kích thước watermark
@@ -71,7 +74,6 @@ export const addWatermark = async (buffer: Buffer, mimetype: string) => {
     const stepYFactor = 1.8 // khoảng cách dọc (theo lần kích thước watermark)
     const rotation = 45 // độ nghiêng
     const opacity = 0.2 // độ trong suốt
-
 
     for (const page of pages) {
       const { width, height } = page.getSize()
@@ -87,11 +89,10 @@ export const addWatermark = async (buffer: Buffer, mimetype: string) => {
             width: watermarkDims.width,
             height: watermarkDims.height,
             rotate: degrees(rotation),
-            opacity,
+            opacity
           })
         }
       }
-
     }
 
     const out = await pdfDoc.save()
