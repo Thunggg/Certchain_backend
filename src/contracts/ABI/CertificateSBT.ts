@@ -1,4 +1,4 @@
-export const contractCertificateSBT = 
+export const contractCertificateSBT =
 [
   { inputs: [], stateMutability: 'nonpayable', type: 'constructor' },
   {

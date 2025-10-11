@@ -6,16 +6,6 @@ import { USERS_MESSAGES } from '~/constants/messages'
 import { BadRequestError, NotFoundError } from '~/ultis/CustomErrors'
 import { validate } from '~/ultis/validation'
 
-export const mintCertificateValidator = validate(
-  checkSchema({
-    owner: {
-      isEthereumAddress: {
-        errorMessage: USERS_MESSAGES.OWNER_IS_NOT_VALID
-      }
-    }
-  })
-)
-
 export const uploadFileValidator = (req: Request, res: Response, next: NextFunction) => {
   const file = req.file as Express.Multer.File | undefined
   if (!file) {
@@ -34,3 +24,27 @@ export const uploadFileValidator = (req: Request, res: Response, next: NextFunct
 
   next()
 }
+
+export const mintCertificateValidator = validate(
+  checkSchema({
+    owner: {
+      isEthereumAddress: {
+        errorMessage: USERS_MESSAGES.OWNER_IS_NOT_VALID
+      }
+    }
+  })
+)
+
+export const verifyCertificateValidator = validate(
+  checkSchema({
+    tokenId: {
+      in: [`body`],
+      notEmpty: {
+        errorMessage: USERS_MESSAGES.TOKEN_ID_IS_REQUIRED
+      },
+      isInt: {
+        errorMessage: USERS_MESSAGES.TOKEN_ID_IS_NOT_VALID
+      }
+    }
+  })
+)

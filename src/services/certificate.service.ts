@@ -5,12 +5,7 @@ import { addWatermark } from '~/ultis/Watermark'
 import { ethers } from 'ethers'
 import { contractCertificateSBT } from '~/contracts/ABI/CertificateSBT'
 
-type MintParams = {
-  owner: string
-  file: Express.Multer.File
-}
-
-export const mintCertificateService = async ({ owner, file }: MintParams) => {
+export const mintCertificateService = async ({ owner, file }: { owner: string, file: Express.Multer.File }) => {
   if (file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
     throw new BadRequestError('File type not supported')
   }
@@ -21,7 +16,7 @@ export const mintCertificateService = async ({ owner, file }: MintParams) => {
 
   // 1) hash file (SHA256)
   const fileHashHex = createHash('sha256').update(file.buffer).digest('hex')
-  const fileHashBytes32 = '0x' + fileHashHex
+  const fileHashBytes32 = '0x' + fileHashHex as `0x${string}`
 
   // 2) Watermark + lưu file vào public/uploads
   const watermarkedBuffer = await addWatermark(file.buffer, file.mimetype)
@@ -39,7 +34,7 @@ export const mintCertificateService = async ({ owner, file }: MintParams) => {
     name: 'Certificate',
     description: 'Certificate',
     image: imageUrl,
-    pdf: animationUrl,
+    animation_url: animationUrl,
     attributes: [
       { trait_type: 'issuerName', value: 'FPT University' },
       { trait_type: 'issuerWallet', value: owner },
@@ -92,4 +87,46 @@ export const mintCertificateService = async ({ owner, file }: MintParams) => {
     qrUrl: '',
     qrImage: ''
   }
+}
+
+export const verifyCertificateService = async ({ tokenId, file }: { tokenId: number, file: Express.Multer.File }) => {
+  if(file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
+    throw new BadRequestError('File type not supported')
+  }
+
+  // 1) Tính SHA256
+  const fileHashHex = createHash('sha256').update(file.buffer).digest('hex')
+  const fileHashBytes32 = '0x' + fileHashHex as `0x${string}`
+
+  // 2) Kiểm tra fileHashBytes32 có khớp với hash trong contract không
+  const rpcUrl = process.env.RPC_URL
+  const privateKey = process.env.PRIVATE_KEY
+  const contractAddress = process.env.CERTIFICATE_CONTRACT_ADDRESS
+
+  const provider = new ethers.JsonRpcProvider(rpcUrl)
+  const signer = new ethers.Wallet(privateKey as string, provider)
+  const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, signer)
+
+  let onChainMatch = false
+  try{
+    onChainMatch = await contract.verifyCertificate(tokenId, fileHashBytes32)
+  }catch(err){
+    throw new BadRequestError('Verification failed!')
+  }
+
+  // 3) Đọc tokenURI từ contract
+  let tokenURI: string | undefined
+  try{
+    tokenURI = await contract.tokenURI(tokenId)
+  }catch(err){
+    throw new BadRequestError('Verification failed!')
+  }
+
+  return {
+    tokenId,
+    hash: fileHashBytes32,
+    onChainMatch,
+    tokenURI
+  }
+
 }
