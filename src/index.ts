@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import express from 'express'
 import bodyParser from 'body-parser'
-import mintRouter from './routes/certificate.route'
+import certificateRouter from './routes/certificate.route'
 import multer from 'multer'
 import { errorHandler } from './middlewares/error.middlewares'
 import 'dotenv/config'
@@ -33,7 +33,7 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
 // routes
-app.use('/mint', upload.single('file'), mintRouter)
+app.use('/api/certificate', upload.single('file'), certificateRouter)
 
 // error handler
 app.use(errorHandler)
