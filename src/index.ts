@@ -6,8 +6,14 @@ import multer from 'multer'
 import { errorHandler } from './middlewares/error.middlewares'
 import 'dotenv/config'
 import { BadRequestError } from './ultis/CustomErrors'
+import { connectDb } from './config/db.config'
 
 const app = express()
+
+;(async () => {
+  await connectDb()
+})()
+
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -26,8 +32,10 @@ const upload = multer({
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 
+// routes
 app.use('/mint', upload.single('file'), mintRouter)
 
+// error handler
 app.use(errorHandler)
 
 const PORT = Number(process.env.PORT || 3000)

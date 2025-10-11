@@ -2,8 +2,9 @@ import { createHash } from 'crypto'
 import { uploadMetadataToCloudinary, uploadToCloudinary } from '~/helpers/cloudinary'
 import { BadRequestError } from '~/ultis/CustomErrors'
 import { addWatermark } from '~/ultis/Watermark'
-import { ethers } from 'ethers'
+import { ethers, TransactionReceipt } from 'ethers'
 import { contractCertificateSBT } from '~/contracts/ABI/CertificateSBT'
+import { CertificateModel } from '~/models/schemas/Certificate'
 
 export const mintCertificateService = async ({ owner, file }: { owner: string, file: Express.Multer.File }) => {
   if (file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
@@ -58,9 +59,30 @@ export const mintCertificateService = async ({ owner, file }: { owner: string, f
   const wallet = new ethers.Wallet(privateKey as string, provider)
   const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, wallet)
 
-  let receipt
+  let receipt: TransactionReceipt 
   try {
-    const tx = await contract.mintCertificate(owner, fileHashBytes32, metadataUrl)
+    const [tx] = await Promise.all([
+      contract.mintCertificate(owner, fileHashBytes32, metadataUrl),
+      CertificateModel.findOneAndUpdate(
+        { fileHash: fileHashBytes32 },
+        {
+          $set: {
+            owner,
+            contractAddress,
+            chainId: Number(process.env.CHAIN_ID || 11155111), // sepoliaETH testnet
+            tokenURI: metadataUrl,
+            fileUrl,
+            metadataUrl,
+            transactionHash: '',
+            status: 'pending',
+            updatedAt: new Date()
+          },
+          $setOnInsert: { createdAt: new Date() }
+        },
+        { new: true, upsert: true }
+      )
+    ])
+    
     receipt = await tx.wait()
   } catch (err) {
     throw new BadRequestError('Minting certificate failed!')
@@ -79,11 +101,26 @@ export const mintCertificateService = async ({ owner, file }: { owner: string, f
     }
   }
 
+
+  await CertificateModel.updateOne({
+    fileHash: fileHashBytes32
+  }, {
+    tokenId,
+    owner,
+    contractAddress,
+    chainId: Number(process.env.CHAIN_ID || 11155111), // sepoliaETH testnet
+    tokenURI: metadataUrl,
+    fileUrl,
+    metadataUrl,
+    transactionHash: receipt.hash,
+    status: tokenId ? 'minted' : 'failed'
+  })
+
   return {
     tokenId,
     hash: fileHashBytes32,
     tokenURI: metadataUrl,
-    transactionHash: receipt.transactionHash,
+    transactionHash: receipt.hash,
     qrUrl: '',
     qrImage: ''
   }

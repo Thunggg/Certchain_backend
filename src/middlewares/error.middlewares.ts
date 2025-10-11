@@ -5,8 +5,10 @@ import { HTTP_STATUS } from '~/constants/httpStatus'
 import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken'
 import { BaseError } from '~/ultis/CustomErrors'
 import { ApiError, ApiErrorResponseWithStatus } from '~/ultis/ApiError'
+import { Error as MongooseError } from 'mongoose'
 
 export const errorHandler = (err: unknown, req: Request, res: Response, next: NextFunction) => {
+  console.log(err)
   // Custom domain errors
   if (err instanceof BaseError) {
     const apiError = new ApiError(err.errorCode, err.message, err.statusCode, new Date().toISOString(), [])
@@ -58,6 +60,26 @@ export const errorHandler = (err: unknown, req: Request, res: Response, next: Ne
       new Date().toISOString()
     )
     return res.status(HTTP_STATUS.UNAUTHORIZED).json(apiError.toResponse())
+  }
+
+  // Mongoose validation error
+  if(err instanceof MongooseError.ValidationError) {
+    const formattedErrors = Object.keys(err.errors).map((field) => {
+      const fieldError = err.errors[field] as MongooseError.ValidatorError
+      return {
+        field,
+        message: fieldError.message,
+        value: fieldError.value
+      }
+    })
+    const apiError = new ApiError(
+      ErrorCodes.VALIDATION,
+      'Validation error',
+      HTTP_STATUS.UNPROCESSABLE_ENTITY,
+      new Date().toISOString(),
+      formattedErrors
+    )
+    return res.status(HTTP_STATUS.UNPROCESSABLE_ENTITY).json(apiError.toResponse())
   }
 
   //default error
