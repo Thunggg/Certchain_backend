@@ -13,10 +13,19 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
     throw new BadRequestError('File type not supported')
   }
 
-  const x = ethers.getAddress(owner.toLowerCase())
-  if (x !== owner) {
+  if (!ethers.isAddress(owner)) {
     throw new BadRequestError('Owner address is not valid')
   }
+  const ownerChecksum = ethers.getAddress(owner)
+
+  const rpcUrl = process.env.RPC_URL
+  const privateKey = process.env.PRIVATE_KEY
+  const contractAddress = process.env.CERTIFICATE_CONTRACT_ADDRESS
+
+  const provider = new ethers.JsonRpcProvider(rpcUrl)
+  const wallet = new ethers.Wallet(privateKey as string, provider)
+  const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, wallet)
+
 
   // 0) xác định loại file (ảnh / PDF)
   const isImage = file.mimetype.startsWith('image/')
@@ -49,7 +58,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
     animation_url: animationUrl,
     attributes: [
       { trait_type: 'issuerName', value: 'FPT University' },
-      { trait_type: 'issuerWallet', value: owner },
+      { trait_type: 'issuerWallet', value: ownerChecksum },
       { trait_type: 'issueDate', value: new Date().toISOString() },
       { trait_type: 'fileHash', value: watermarkedFileHashBytes32 },
       { trait_type: 'type', value: 'certificate' }
@@ -62,18 +71,18 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   const metadataUrl = await uploadMetadataToCloudinary(metadata, 'metadata', watermarkedFileHashHex)
 
   // 6) mint NFT on-chain
-  const rpcUrl = process.env.RPC_URL
-  const privateKey = process.env.PRIVATE_KEY
-  const contractAddress = process.env.CERTIFICATE_CONTRACT_ADDRESS
+  // const rpcUrl = process.env.RPC_URL
+  // const privateKey = process.env.PRIVATE_KEY
+  // const contractAddress = process.env.CERTIFICATE_CONTRACT_ADDRESS
 
-  const provider = new ethers.JsonRpcProvider(rpcUrl)
-  const wallet = new ethers.Wallet(privateKey as string, provider)
-  const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, wallet)
+  // const provider = new ethers.JsonRpcProvider(rpcUrl)
+  // const wallet = new ethers.Wallet(privateKey as string, provider)
+  // const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, wallet)
 
   let receipt: TransactionReceipt
   try {
     const fee = await provider.getFeeData()
-    const gasEstimate = await contract.mintCertificate.estimateGas(owner, watermarkedFileHashBytes32, metadataUrl)
+    const gasEstimate = await contract.mintCertificate.estimateGas(ownerChecksum, watermarkedFileHashBytes32, metadataUrl)
 
     const gasLimit = gasEstimate * (gasEstimate / 5n) // 20%
     const maxFeePerGas = fee.maxFeePerGas ?? fee.gasPrice ?? 0n // trường hợp nếu mạng không hỗ trợ EIP-1559, fallback sang gasPrice.
@@ -85,14 +94,14 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
     }
 
     const [tx] = await Promise.all([
-      contract.mintCertificate(owner, watermarkedFileHashBytes32, metadataUrl),
+      contract.mintCertificate(ownerChecksum, watermarkedFileHashBytes32, metadataUrl),
       CertificateModel.findOneAndUpdate(
         { publishedHash: watermarkedFileHashBytes32 },
         {
           $set: {
             publishedHash: watermarkedFileHashBytes32,
             originalHash: fileHashBytes32,
-            owner,
+            owner: ownerChecksum,
             contractAddress,
             chainId: Number(process.env.CHAIN_ID || 11155111), // sepoliaETH testnet
             tokenURI: metadataUrl,
@@ -140,7 +149,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
       originalHash: fileHashBytes32,
       publishedHash: watermarkedFileHashBytes32,
       tokenId,
-      owner,
+      owner: ownerChecksum,
       contractAddress,
       chainId: Number(process.env.CHAIN_ID || 11155111), // sepoliaETH testnet
       tokenURI: metadataUrl,
@@ -243,20 +252,22 @@ export const verifyCertificateByQueryService = async ({
   type?: string
 }) => {
   try {
-    const rpcUrl = process.env.RPC_URL
-    const provider = new ethers.JsonRpcProvider(rpcUrl)
-    const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, provider)
-
-    const x = ethers.getAddress(contractAddress.toLowerCase())
-    if (x !== contractAddress) {
+    if (!ethers.isAddress(contractAddress)) {
       throw new BadRequestError('Contract address is not valid')
     }
+    const contractAddressChecksum = ethers.getAddress(contractAddress)
+
+    const rpcUrl = process.env.RPC_URL
+    const provider = new ethers.JsonRpcProvider(rpcUrl)
+    const contract = new ethers.Contract(contractAddressChecksum as string, contractCertificateSBT, provider)
+
+    
 
     const [owner, tokenURI] = await Promise.all([contract.ownerOf(tokenId), contract.tokenURI(tokenId)])
 
     return {
       tokenId,
-      contractAddress,
+      contractAddressChecksum,
       chainId,
       owner,
       tokenURI,
