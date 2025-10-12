@@ -80,7 +80,14 @@ export const uploadMetadataToCloudinary = async (
   const checkFile = await isFileExist(folder, fileName as string, 'raw')
 
   if (checkFile) {
-    throw new ConflictError('File already exists!')
+    // Idempotent: nếu metadata đã từng upload, trả về URL hiện có
+    try {
+      const res = await cloudinary.api.resource(`${folder}/${fileName}`, { resource_type: 'raw' })
+      if (res?.secure_url) return res.secure_url
+    } catch (error) {
+      // nếu không lấy được secure_url, fallback throw như trước
+      throw new ConflictError('File already exists!')
+    }
   }
 
   const jsonString = JSON.stringify(metadata, null, 2)
