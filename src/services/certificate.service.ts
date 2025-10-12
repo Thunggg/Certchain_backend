@@ -1,6 +1,6 @@
 import { createHash } from 'crypto'
 import { uploadMetadataToCloudinary, uploadToCloudinary } from '~/helpers/cloudinary'
-import { BadRequestError, NotFoundError } from '~/ultis/CustomErrors'
+import { BadRequestError, BlockchainError, NotFoundError } from '~/ultis/CustomErrors'
 import { addWatermark } from '~/ultis/Watermark'
 import { ethers, TransactionReceipt } from 'ethers'
 import { contractCertificateSBT } from '~/contracts/ABI/CertificateSBT'
@@ -83,7 +83,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
     if (balance < required) {
       throw new BadRequestError('Insufficient balance!')
     }
-    
+
     const [tx] = await Promise.all([
       contract.mintCertificate(owner, watermarkedFileHashBytes32, metadataUrl),
       CertificateModel.findOneAndUpdate(
@@ -152,7 +152,9 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   )
 
   const chainId = Number(process.env.CHAIN_ID || 11155111)
-  const qrBase = process.env.VERIFY_BASE_URL + `?tokenId=${tokenId}&contractAddress=${contractAddress}&chainId=${chainId}&type=${"SBT"}`
+  const qrBase =
+    process.env.VERIFY_BASE_URL +
+    `?tokenId=${tokenId}&contractAddress=${contractAddress}&chainId=${chainId}&type=${'SBT'}`
   const qrUrl = `${qrBase}?tokenId=${tokenId}&contract=${contractAddress}&chain=${chainId}&type=sbt`
   const qrImage = await QRCode.toDataURL(qrUrl)
 
@@ -229,22 +231,49 @@ export const verifyCertificateService = async ({ tokenId, file }: { tokenId: num
   }
 }
 
-export const verifyCertificateByQueryService = async ({ tokenId, contractAddress, chainId, type }: { tokenId: number; contractAddress: string; chainId: number; type?: string }) => {
-  const rpcUrl = process.env.RPC_URL
-  const provider = new ethers.JsonRpcProvider(rpcUrl)
-  const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, provider)
+export const verifyCertificateByQueryService = async ({
+  tokenId,
+  contractAddress,
+  chainId,
+  type
+}: {
+  tokenId: number
+  contractAddress: string
+  chainId: number
+  type?: string
+}) => {
+  try {
+    const rpcUrl = process.env.RPC_URL
+    const provider = new ethers.JsonRpcProvider(rpcUrl)
+    const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, provider)
 
-  const [owner, tokenURI] = await Promise.all([
-    contract.ownerOf(tokenId),
-    contract.tokenURI(tokenId)
-  ])
+    const x = ethers.getAddress(contractAddress.toLowerCase())
+    if (x !== contractAddress) {
+      throw new BadRequestError('Contract address is not valid')
+    }
 
-  return { 
-    tokenId,
-    contractAddress,
-    chainId,
-    owner,
-    tokenURI,
-    status: 'verified'
+    const [owner, tokenURI] = await Promise.all([contract.ownerOf(tokenId), contract.tokenURI(tokenId)])
+
+    return {
+      tokenId,
+      contractAddress,
+      chainId,
+      owner,
+      tokenURI,
+      status: 'verified'
+    }
+  } catch (err: unknown) {
+    const e = err as EthersError
+    if (
+      e?.code === 'CALL_EXCEPTION'
+    ) {
+      throw new NotFoundError('Token not found')
+    }
+
+    if (e?.code === 'NETWORK_ERROR') {
+      throw new BlockchainError('Blockchain network error')
+    }
+    
+    throw new BadRequestError('Verification failed!')
   }
 }

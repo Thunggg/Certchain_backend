@@ -29,9 +29,9 @@ export const verifyCertificateController = async (req: Request<ParamsDictionary,
 
 export const verifyCertificateByQueryController = async (req: Request<ParamsDictionary, any, any, verifyCertificateReqQuery>, res: Response, next: NextFunction) => {
   try {
-  const tokenId = req.query.tokenId
+  const tokenId = Number(req.query.tokenId)
   const contractAddress = req.query.contractAddress
-  const chainId = req.query.chainId
+  const chainId = Number(req.query.chainId)
   const type = req.query.type
 
   const result = await verifyCertificateByQueryService({ tokenId, contractAddress, chainId, type })

@@ -1,3 +1,5 @@
+import { ParsedQs } from 'qs'
+
 export interface mintCertificateReqBody {
   owner: string
 }
@@ -6,10 +8,10 @@ export interface verifyCertificateReqBody {
   tokenId: number
 }
 
-export interface verifyCertificateReqQuery {
-  tokenId: number
+export interface verifyCertificateReqQuery extends ParsedQs{
+  tokenId: string
   contractAddress: string
-  chainId: number
+  chainId: string
   type?: string
   sig?: string
 }

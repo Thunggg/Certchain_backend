@@ -1,6 +1,6 @@
 import { Router } from 'express'
 import { mintCertificateController, verifyCertificateByQueryController, verifyCertificateController } from '~/controllers/certificate.controller'
-import { mintCertificateValidator, uploadFileValidator } from '~/middlewares/certificate.middlewares'
+import { mintCertificateValidator, uploadFileValidator, verifyCertificateByQueryValidator } from '~/middlewares/certificate.middlewares'
 import { wrapRequestHandler } from '~/ultis/handlers'
 
 const certificateRouter = Router()
@@ -12,6 +12,6 @@ certificateRouter.post('/mint', mintCertificateValidator, uploadFileValidator, w
 certificateRouter.post('/verify', uploadFileValidator, wrapRequestHandler(verifyCertificateController))
 
 // GET /api/certificate/verify (verify by query)
-certificateRouter.get('/verify', wrapRequestHandler(verifyCertificateByQueryController))
+certificateRouter.get('/verify', verifyCertificateByQueryValidator, wrapRequestHandler(verifyCertificateByQueryController))
 
 export default certificateRouter
