@@ -13,7 +13,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   }
 
   const x = ethers.getAddress(owner.toLowerCase())
-  if(x !== owner){
+  if (x !== owner) {
     throw new BadRequestError('Owner address is not valid')
   }
 
@@ -71,6 +71,18 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
 
   let receipt: TransactionReceipt
   try {
+    const fee = await provider.getFeeData()
+    const gasEstimate = await contract.mintCertificate.estimateGas(owner, watermarkedFileHashBytes32, metadataUrl)
+
+    const gasLimit = gasEstimate * (gasEstimate / 5n) // 20%
+    const maxFeePerGas = fee.maxFeePerGas ?? fee.gasPrice ?? 0n // trường hợp nếu mạng không hỗ trợ EIP-1559, fallback sang gasPrice.
+    const required = maxFeePerGas * gasLimit
+
+    const balance = await provider.getBalance(wallet.address)
+    if (balance < required) {
+      throw new BadRequestError('Insufficient balance!')
+    }
+    
     const [tx] = await Promise.all([
       contract.mintCertificate(owner, watermarkedFileHashBytes32, metadataUrl),
       CertificateModel.findOneAndUpdate(
