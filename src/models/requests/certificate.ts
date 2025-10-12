@@ -5,3 +5,11 @@ export interface mintCertificateReqBody {
 export interface verifyCertificateReqBody {
   tokenId: number
 }
+
+export interface verifyCertificateReqQuery {
+  tokenId: number
+  contractAddress: string
+  chainId: number
+  type?: string
+  sig?: string
+}
