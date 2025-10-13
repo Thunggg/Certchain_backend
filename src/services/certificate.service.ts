@@ -26,7 +26,6 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   const wallet = new ethers.Wallet(privateKey as string, provider)
   const contract = new ethers.Contract(contractAddress as string, contractCertificateSBT, wallet)
 
-
   // 0) xác định loại file (ảnh / PDF)
   const isImage = file.mimetype.startsWith('image/')
   const resourceType = isImage ? 'image' : 'raw'
@@ -58,7 +57,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
     animation_url: animationUrl,
     attributes: [
       { trait_type: 'issuerName', value: 'FPT University' },
-      { trait_type: 'issuerWallet', value: ownerChecksum },
+      { trait_type: 'issuerWallet', value: wallet.address as string },
       { trait_type: 'issueDate', value: new Date().toISOString() },
       { trait_type: 'fileHash', value: watermarkedFileHashBytes32 },
       { trait_type: 'type', value: 'certificate' }
@@ -82,9 +81,13 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   let receipt: TransactionReceipt
   try {
     const fee = await provider.getFeeData()
-    const gasEstimate = await contract.mintCertificate.estimateGas(ownerChecksum, watermarkedFileHashBytes32, metadataUrl)
+    const gasEstimate = await contract.mintCertificate.estimateGas(
+      ownerChecksum,
+      watermarkedFileHashBytes32,
+      metadataUrl
+    )
 
-    const gasLimit = gasEstimate * (gasEstimate / 5n) // 20%
+    const gasLimit = gasEstimate + gasEstimate / 5n // 20%
     const maxFeePerGas = fee.maxFeePerGas ?? fee.gasPrice ?? 0n // trường hợp nếu mạng không hỗ trợ EIP-1559, fallback sang gasPrice.
     const required = maxFeePerGas * gasLimit
 
@@ -94,7 +97,11 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
     }
 
     const [tx] = await Promise.all([
-      contract.mintCertificate(ownerChecksum, watermarkedFileHashBytes32, metadataUrl),
+      contract.mintCertificate(ownerChecksum, watermarkedFileHashBytes32, metadataUrl, {
+        gasLimit: gasLimit,
+        maxFeePerGas: fee.maxFeePerGas ?? fee.gasPrice,
+        maxPriorityFeePerGas: fee.maxPriorityFeePerGas ?? 0n
+      }),
       CertificateModel.findOneAndUpdate(
         { publishedHash: watermarkedFileHashBytes32 },
         {
@@ -261,8 +268,6 @@ export const verifyCertificateByQueryService = async ({
     const provider = new ethers.JsonRpcProvider(rpcUrl)
     const contract = new ethers.Contract(contractAddressChecksum as string, contractCertificateSBT, provider)
 
-    
-
     const [owner, tokenURI] = await Promise.all([contract.ownerOf(tokenId), contract.tokenURI(tokenId)])
 
     return {
@@ -275,16 +280,14 @@ export const verifyCertificateByQueryService = async ({
     }
   } catch (err: unknown) {
     const e = err as EthersError
-    if (
-      e?.code === 'CALL_EXCEPTION'
-    ) {
+    if (e?.code === 'CALL_EXCEPTION') {
       throw new NotFoundError('Token not found')
     }
 
     if (e?.code === 'NETWORK_ERROR') {
       throw new BlockchainError('Blockchain network error')
     }
-    
+
     throw new BadRequestError('Verification failed!')
   }
 }

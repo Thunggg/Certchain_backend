@@ -9,6 +9,14 @@ export const mintCreativeValidator = validate(
         isEthereumAddress: {
           errorMessage: USERS_MESSAGES.OWNER_IS_NOT_VALID
         }
+      },
+      issuerName: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.ISSUER_NAME_IS_REQUIRED
+        },
+        isString: {
+          errorMessage: USERS_MESSAGES.ISSUER_NAME_IS_NOT_STRING
+        }
       }
     },
     ['body']

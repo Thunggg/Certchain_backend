@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary'
 import { Readable } from 'stream'
 import { CertificateModel } from '~/models/schemas/Certificate'
+import { CreativeModel } from '~/models/schemas/Creative'
 import { ConflictError } from '~/ultis/CustomErrors'
 
 // Cấu hình Cloudinary
@@ -37,16 +38,28 @@ export const uploadToCloudinary = async (
   fileName?: string
 ): Promise<string> => {
   const checkFile = await isFileExist(folder, fileName as string, resourceType)
-  if (checkFile) {
-    const exist = await CertificateModel.findOne({ publishedHash: fileName })
-      .select('status')
-      .lean()
 
-    if (exist && exist.status !== 'minted') {
-      return cloudinary.url(`${folder}/${fileName}`, { secure: true, resource_type: resourceType })
+  if (checkFile) {
+    const [cert, creative] = await Promise.all([
+      CertificateModel.findOne({ publishedHash: fileName }).select('status').lean(),
+      CreativeModel.findOne({ publishedHash: fileName }).select('status').lean()
+    ])
+
+    const hasPending =
+      (cert && cert.status !== 'minted') || (creative && creative.status !== 'minted')
+    const hasMinted =
+      (cert && cert.status === 'minted') || (creative && creative.status === 'minted')
+
+    if (hasPending) {
+      return cloudinary.url(`${folder}/${fileName}`, {
+        secure: true,
+        resource_type: resourceType
+      })
     }
 
-    throw new ConflictError('File already exists!')
+    if (hasMinted) {
+      throw new ConflictError('File already exists!')
+    }
   }
 
   return new Promise((resolve, reject) => {

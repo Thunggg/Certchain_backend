@@ -17,4 +17,7 @@ export const USERS_MESSAGES = {
 
   SIG_IS_REQUIRED: 'Signature is required',
   SIG_IS_NOT_VALID: 'Signature must be a string',
+
+  ISSUER_NAME_IS_REQUIRED: 'Issuer name is required',
+  ISSUER_NAME_IS_NOT_STRING: 'Issuer name must be a string',
 } as const
