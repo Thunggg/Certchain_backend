@@ -18,7 +18,7 @@ export const uploadFileValidator = (req: Request, res: Response, next: NextFunct
   }
 
   const fileSize = 1024 * 1024 * 10 // 10Mb
-  if(file.size > fileSize) {
+  if (file.size > fileSize) {
     return next(new BadRequestError('File size must be less than 10Mb'))
   }
 
@@ -26,13 +26,16 @@ export const uploadFileValidator = (req: Request, res: Response, next: NextFunct
 }
 
 export const mintCertificateValidator = validate(
-  checkSchema({
-    owner: {
-      isEthereumAddress: {
-        errorMessage: USERS_MESSAGES.OWNER_IS_NOT_VALID
+  checkSchema(
+    {
+      owner: {
+        isEthereumAddress: {
+          errorMessage: USERS_MESSAGES.OWNER_IS_NOT_VALID
+        }
       }
-    }
-  })
+    },
+    ['body']
+  )
 )
 
 export const verifyCertificateValidator = validate(
@@ -50,58 +53,59 @@ export const verifyCertificateValidator = validate(
 )
 
 export const verifyCertificateByQueryValidator = validate(
-  checkSchema({
-    tokenId: {
-      notEmpty: {
-        errorMessage: USERS_MESSAGES.TOKEN_ID_IS_REQUIRED
-      },
-      isInt: {
-        errorMessage: USERS_MESSAGES.TOKEN_ID_IS_NOT_VALID
-      },
-      custom: {
-        options: (value) => {
-          if(value < 0) {
-            throw new BadRequestError(USERS_MESSAGES.TOKEN_ID_IS_NOT_VALID)
+  checkSchema(
+    {
+      tokenId: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.TOKEN_ID_IS_REQUIRED
+        },
+        isInt: {
+          errorMessage: USERS_MESSAGES.TOKEN_ID_IS_NOT_VALID
+        },
+        custom: {
+          options: (value) => {
+            if (value < 0) {
+              throw new BadRequestError(USERS_MESSAGES.TOKEN_ID_IS_NOT_VALID)
+            }
+            return true
           }
-          return true
+        }
+      },
+      contractAddress: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.CONTRACT_ADDRESS_IS_REQUIRED
+        },
+        isEthereumAddress: {
+          errorMessage: USERS_MESSAGES.CONTRACT_ADDRESS_IS_NOT_VALID
+        }
+      },
+      chainId: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.CHAIN_ID_IS_REQUIRED
+        },
+        isInt: {
+          errorMessage: USERS_MESSAGES.CHAIN_ID_IS_NOT_VALID
+        }
+      },
+      type: {
+        optional: true,
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.TYPE_IS_REQUIRED
+        },
+        isString: {
+          errorMessage: USERS_MESSAGES.TYPE_IS_NOT_VALID
+        }
+      },
+      sig: {
+        optional: true,
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.SIG_IS_REQUIRED
+        },
+        isString: {
+          errorMessage: USERS_MESSAGES.SIG_IS_NOT_VALID
         }
       }
     },
-    contractAddress: {
-      notEmpty: {
-        errorMessage: USERS_MESSAGES.CONTRACT_ADDRESS_IS_REQUIRED
-      },
-      isEthereumAddress: {
-        errorMessage: USERS_MESSAGES.CONTRACT_ADDRESS_IS_NOT_VALID
-      }
-    },
-    chainId: {
-      notEmpty: {
-        errorMessage: USERS_MESSAGES.CHAIN_ID_IS_REQUIRED
-      },
-      isInt: {
-        errorMessage: USERS_MESSAGES.CHAIN_ID_IS_NOT_VALID
-      }
-    },
-    type: {
-      optional: true,
-      notEmpty: {
-        errorMessage: USERS_MESSAGES.TYPE_IS_REQUIRED
-      },
-      isString: {
-        errorMessage: USERS_MESSAGES.TYPE_IS_NOT_VALID
-      }
-    },
-    sig: {
-      optional: true,
-      notEmpty: {
-        errorMessage: USERS_MESSAGES.SIG_IS_REQUIRED
-      },
-      isString: {
-        errorMessage: USERS_MESSAGES.SIG_IS_NOT_VALID
-      }
-    }
-  },
-  ['query']
-)
+    ['query']
+  )
 )

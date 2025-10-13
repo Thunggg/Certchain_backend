@@ -43,7 +43,7 @@ export const uploadToCloudinary = async (
       .lean()
 
     if (exist && exist.status !== 'minted') {
-      return cloudinary.url(`${folder}/${fileName}`, { secure: true })
+      return cloudinary.url(`${folder}/${fileName}`, { secure: true, resource_type: resourceType })
     }
 
     throw new ConflictError('File already exists!')

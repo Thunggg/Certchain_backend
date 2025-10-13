@@ -7,6 +7,7 @@ import { errorHandler } from './middlewares/error.middlewares'
 import 'dotenv/config'
 import { BadRequestError } from './ultis/CustomErrors'
 import { connectDb } from './config/db.config'
+import creativeRouter from './routes/creative.route'
 
 const app = express()
 
@@ -34,6 +35,7 @@ app.use(bodyParser.urlencoded({ extended: true }))
 
 // routes
 app.use('/api/certificate', upload.single('file'), certificateRouter)
+app.use('/api/creative', upload.single('file'), creativeRouter)
 
 // error handler
 app.use(errorHandler)

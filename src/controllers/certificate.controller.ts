@@ -7,7 +7,7 @@ import {
   verifyCertificateService
 } from '~/services/certificate.service'
 import { ApiSuccess } from '~/ultis/ApiSuccess'
-import { BadRequestError, NotFoundError } from '~/ultis/CustomErrors'
+import { NotFoundError } from '~/ultis/CustomErrors'
 import { ParamsDictionary } from 'express-serve-static-core'
 import {
   mintCertificateReqBody,
