@@ -7,6 +7,7 @@ import { contractCertificateSBT } from '~/contracts/ABI/CertificateSBT'
 import { CertificateModel } from '~/models/schemas/Certificate'
 import type { EthersError } from 'ethers'
 import QRCode from 'qrcode'
+import { URLSearchParams } from 'url'
 
 export const mintCertificateService = async ({ owner, file }: { owner: string; file: Express.Multer.File }) => {
   if (file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
@@ -169,10 +170,13 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   )
 
   const chainId = Number(process.env.CHAIN_ID || 11155111)
-  const qrBase =
-    process.env.VERIFY_BASE_URL +
-    `?tokenId=${tokenId}&contractAddress=${contractAddress}&chainId=${chainId}&type=${'SBT'}`
-  const qrUrl = `${qrBase}?tokenId=${tokenId}&contract=${contractAddress}&chain=${chainId}&type=sbt`
+  const params = new URLSearchParams({
+    tokenId: String(tokenId ?? ''),
+    contract: String(contractAddress ?? ''),
+    chain: String(chainId),
+    type: 'sbt'
+  })
+  const qrUrl = `${process.env.VERIFY_BASE_URL}?${params.toString()}`
   const qrImage = await QRCode.toDataURL(qrUrl)
 
   return {
