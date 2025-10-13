@@ -41,7 +41,8 @@ export const mintCreativeService = async ({ owner, issuerName, file }: { owner: 
 
   // 3) Upload Cloudinary
   const [fileUrl] = await Promise.all([
-    uploadToCloudinary(watermarkedBuffer as Buffer, 'creatives', resourceType, watermarkedFileHashBytes32)
+    // pass publishedHashHex (no 0x) for public_id
+    uploadToCloudinary(watermarkedBuffer as Buffer, 'creatives', resourceType, watermarkedFileHashHex)
   ])
 
   // 4) Tạo metadata JSON

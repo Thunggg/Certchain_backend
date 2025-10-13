@@ -43,7 +43,8 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
 
   // 3) Upload Cloudinary
   const [fileUrl] = await Promise.all([
-    uploadToCloudinary(watermarkedBuffer as Buffer, 'certificates', resourceType, watermarkedFileHashBytes32)
+    // pass publishedHashHex (no 0x) for public_id
+    uploadToCloudinary(watermarkedBuffer as Buffer, 'certificates', resourceType, watermarkedFileHashHex)
   ])
 
   // 4) Tạo metadata JSON

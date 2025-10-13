@@ -37,12 +37,16 @@ export const uploadToCloudinary = async (
   resourceType: 'image' | 'raw',
   fileName?: string
 ): Promise<string> => {
-  const checkFile = await isFileExist(folder, fileName as string, resourceType)
+  // Normalize: use public_id without '0x' for storage
+  const publicId = (fileName || '').startsWith('0x') ? (fileName as string).slice(2) : (fileName as string)
+
+  const checkFile = await isFileExist(folder, publicId as string, resourceType)
 
   if (checkFile) {
+    const normalizedDbHash = (`0x${publicId}`) as string
     const [cert, creative] = await Promise.all([
-      CertificateModel.findOne({ publishedHash: fileName }).select('status').lean(),
-      CreativeModel.findOne({ publishedHash: fileName }).select('status').lean()
+      CertificateModel.findOne({ publishedHash: normalizedDbHash }).select('status').lean(),
+      CreativeModel.findOne({ publishedHash: normalizedDbHash }).select('status').lean()
     ])
 
     const hasPending =
@@ -51,7 +55,7 @@ export const uploadToCloudinary = async (
       (cert && cert.status === 'minted') || (creative && creative.status === 'minted')
 
     if (hasPending) {
-      return cloudinary.url(`${folder}/${fileName}`, {
+      return cloudinary.url(`${folder}/${publicId}`, {
         secure: true,
         resource_type: resourceType
       })
@@ -66,7 +70,7 @@ export const uploadToCloudinary = async (
     const stream = cloudinary.uploader.upload_stream(
       {
         folder,
-        public_id: fileName, // optional
+        public_id: publicId, // standardized (no 0x)
         resource_type: resourceType, // cho phép upload cả ảnh và PDF
         use_filename: true,
         unique_filename: false,
@@ -90,12 +94,15 @@ export const uploadMetadataToCloudinary = async (
   folder: string,
   fileName: string
 ): Promise<string> => {
-  const checkFile = await isFileExist(folder, fileName as string, 'raw')
+  // Normalize: use public_id without '0x'
+  const publicId = fileName.startsWith('0x') ? fileName.slice(2) : fileName
+
+  const checkFile = await isFileExist(folder, publicId as string, 'raw')
 
   if (checkFile) {
     // Idempotent: nếu metadata đã từng upload, trả về URL hiện có
     try {
-      const res = await cloudinary.api.resource(`${folder}/${fileName}`, { resource_type: 'raw' })
+      const res = await cloudinary.api.resource(`${folder}/${publicId}`, { resource_type: 'raw' })
       if (res?.secure_url) return res.secure_url
     } catch (error) {
       // nếu không lấy được secure_url, fallback throw như trước
@@ -111,7 +118,7 @@ export const uploadMetadataToCloudinary = async (
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder,
-        public_id: fileName,
+        public_id: publicId,
         resource_type: 'raw', // JSON là raw file
         format: 'json',
         use_filename: true,
