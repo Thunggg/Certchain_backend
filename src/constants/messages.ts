@@ -20,4 +20,10 @@ export const USERS_MESSAGES = {
 
   ISSUER_NAME_IS_REQUIRED: 'Issuer name is required',
   ISSUER_NAME_IS_NOT_STRING: 'Issuer name must be a string',
+
+  USER_IS_REQUIRED: 'User is required',
+  USER_IS_NOT_VALID: 'User is not valid',
+
+  EXPIRES_IS_REQUIRED: 'Expires is required',
+  EXPIRES_IS_NOT_VALID: 'Expires must be an integer',
 } as const

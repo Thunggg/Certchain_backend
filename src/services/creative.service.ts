@@ -170,3 +170,68 @@ export const mintCreativeService = async ({ owner, issuerName, file }: { owner: 
     qrImage: ''
   }
 }
+
+export const leaseCreativeService = async ({ tokenId, user, expires }: { tokenId: string; user: string; expires: number }) => {  
+  const rpcUrl = process.env.RPC_URL
+  const contractAddress = process.env.CREATIVE4907_CONTRACT_ADDRESS
+  const provider = new ethers.JsonRpcProvider(rpcUrl)
+  const wallet = new ethers.Wallet(process.env.PRIVATE_KEY as string, provider)
+  const contract = new ethers.Contract(contractAddress as string, contractCreativeAsset4907, wallet)
+
+  // chỉ có owner mới có thể lease
+  const onChainOwner = await contract.ownerOf(Number(tokenId))
+  if(ethers.getAddress(onChainOwner) !== ethers.getAddress(wallet.address)) {
+    throw new BadRequestError('You are not the owner of this creative')
+  }
+
+  const fee = await provider.getFeeData()
+  const gasEstimate = await contract.setUser.estimateGas(user, expires)
+  const gasLimit = gasEstimate + (gasEstimate / 5n) // 20%
+
+  const tx = await contract.setUser(tokenId, user, expires, {
+    gasLimit: gasLimit,
+    maxFeePerGas: fee.maxFeePerGas ?? fee.gasPrice,
+    maxPriorityFeePerGas: fee.maxPriorityFeePerGas ?? 0n
+  })
+  const receipt = await tx.wait()
+
+  const [userOf, userExpires, tokenURI] = await Promise.all([
+    contract.userOf(Number(tokenId)),
+    contract.userExpires(Number(tokenId)),
+    contract.tokenURI(Number(tokenId))
+  ])
+
+  const chainId = Number(process.env.CHAIN_ID || 11155111)
+  await CreativeModel.findOneAndUpdate(
+    { tokenId: String(tokenId), contractAddress, chainId },
+    {
+      $set: {
+        owner: ethers.getAddress(onChainOwner),
+        user: userOf === ethers.ZeroAddress ? undefined : ethers.getAddress(userOf),
+        userExpires: Number(userExpires),
+        tokenURI,
+        transactionHash: receipt.hash
+      },
+      $push: {
+        leaseHistory: {
+          user: ethers.getAddress(user),
+          expires: Number(userExpires),
+          transactionHash: receipt.hash
+        }
+      }
+    },
+    { upsert: true }
+  )
+
+  return {
+    tokenId,
+    contractAddress,
+    chainId,
+    owner: ethers.getAddress(onChainOwner),
+    user: userOf === ethers.ZeroAddress ? undefined : ethers.getAddress(userOf),
+    expires: Number(userExpires),
+    tokenURI,
+    transactionHash: receipt.hash,
+    status: 'leased'
+  }
+}
