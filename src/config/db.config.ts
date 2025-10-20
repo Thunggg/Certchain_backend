@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 export const connectDb = async () => {
   try {
     await mongoose.connect(
-      `mongodb+srv://thuannguyen20041028_db_user:${process.env.DB_PASSWORD}@cluster0.1btnnox.mongodb.net/`, // databaseNameHere
+      `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.1btnnox.mongodb.net/`, // databaseNameHere
       {
         dbName: process.env.DB_NAME
       }

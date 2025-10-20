@@ -8,8 +8,11 @@ import 'dotenv/config'
 import { BadRequestError } from './ultis/CustomErrors'
 import { connectDb } from './config/db.config'
 import creativeRouter from './routes/creative.route'
+var cors = require('cors')
 
 const app = express()
+
+app.use(cors())
 
 ;(async () => {
   await connectDb()
