@@ -297,8 +297,39 @@ export const verifyCertificateByQueryService = async ({
   }
 }
 
-export const getCertificateByOwnerAddressService = async ({ ownerAddress }: { ownerAddress: string }) => {
-  const certificates = await CertificateModel.find({ owner: ownerAddress, status: 'minted' })
+export const getCertificateByOwnerAddressService = async ({
+  ownerAddress,
+  page,
+  limit
+}: {
+  ownerAddress: string
+  page: number
+  limit: number
+}) => {
+  if (!ethers.isAddress(ownerAddress)) {
+    throw new BadRequestError('Owner address is not valid')
+  }
+  const ownerChecksum = ethers.getAddress(ownerAddress)
 
-  return certificates
+  const certificates = await CertificateModel.find({ owner: ownerChecksum, status: 'minted' })
+
+  const filter = { owner: ownerChecksum, status: 'minted' }
+  const [total, items] = await Promise.all([
+    await CertificateModel.countDocuments(filter),
+    await CertificateModel.find(filter)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean()
+  ])
+
+  return {
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit) || 1
+    }
+  }
 }

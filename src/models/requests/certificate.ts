@@ -18,4 +18,6 @@ export interface verifyCertificateReqQuery extends ParsedQs{
 
 export interface getCertificateByOwnerAddressReqQuery{
   ownerAddress: string
+  page?: number
+  limit?: number
 }

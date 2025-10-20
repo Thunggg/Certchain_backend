@@ -72,8 +72,10 @@ export const getCertificateByOwnerAddressController = async (
   next: NextFunction
 ) => {
   const ownerAddress = req.body.ownerAddress 
-
-  const result = await getCertificateByOwnerAddressService({ ownerAddress })
+  const page = Number(req.body.page)
+  const limit = Number(req.body.limit)
+  
+  const result = await getCertificateByOwnerAddressService({ ownerAddress, page, limit })
 
   res.status(200).json(new ApiSuccess(200, 'Certificates fetched successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
 }
