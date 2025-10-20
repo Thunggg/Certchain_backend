@@ -26,4 +26,5 @@ export const USERS_MESSAGES = {
 
   EXPIRES_IS_REQUIRED: 'Expires is required',
   EXPIRES_IS_NOT_VALID: 'Expires must be an integer',
+
 } as const

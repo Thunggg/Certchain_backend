@@ -15,3 +15,7 @@ export interface verifyCertificateReqQuery extends ParsedQs{
   type?: string
   sig?: string
 }
+
+export interface getCertificateByOwnerAddressReqQuery{
+  ownerAddress: string
+}

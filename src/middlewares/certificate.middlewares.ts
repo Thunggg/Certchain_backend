@@ -109,3 +109,18 @@ export const verifyCertificateByQueryValidator = validate(
     ['query']
   )
 )
+
+export const getCertificateByOwnerAddressValidator = validate(
+  checkSchema({
+    ownerAddress: {
+      notEmpty: {
+        errorMessage: USERS_MESSAGES.OWNER_IS_REQUIRED
+      },
+      isEthereumAddress: {
+        errorMessage: USERS_MESSAGES.OWNER_IS_NOT_VALID
+      }
+    }
+  },
+    ['body']
+  ) 
+)

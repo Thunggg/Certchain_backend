@@ -2,6 +2,7 @@ import { createHash } from 'crypto'
 import { NextFunction, Request, Response } from 'express'
 import { HTTP_STATUS } from '~/constants/httpStatus'
 import {
+  getCertificateByOwnerAddressService,
   mintCertificateService,
   verifyCertificateByQueryService,
   verifyCertificateService
@@ -10,6 +11,7 @@ import { ApiSuccess } from '~/ultis/ApiSuccess'
 import { NotFoundError } from '~/ultis/CustomErrors'
 import { ParamsDictionary } from 'express-serve-static-core'
 import {
+  getCertificateByOwnerAddressReqQuery,
   mintCertificateReqBody,
   verifyCertificateReqBody,
   verifyCertificateReqQuery
@@ -62,4 +64,16 @@ export const verifyCertificateByQueryController = async (
   res
     .status(200)
     .json(new ApiSuccess(200, 'Certificate verified successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
+}
+
+export const getCertificateByOwnerAddressController = async (
+  req: Request<ParamsDictionary, any, getCertificateByOwnerAddressReqQuery>,
+  res: Response,
+  next: NextFunction
+) => {
+  const ownerAddress = req.body.ownerAddress 
+
+  const result = await getCertificateByOwnerAddressService({ ownerAddress })
+
+  res.status(200).json(new ApiSuccess(200, 'Certificates fetched successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
 }

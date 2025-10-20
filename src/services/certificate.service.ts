@@ -296,3 +296,9 @@ export const verifyCertificateByQueryService = async ({
     throw new BadRequestError('Verification failed!')
   }
 }
+
+export const getCertificateByOwnerAddressService = async ({ ownerAddress }: { ownerAddress: string }) => {
+  const certificates = await CertificateModel.find({ owner: ownerAddress, status: 'minted' })
+
+  return certificates
+}
