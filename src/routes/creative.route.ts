@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { leaseCreativeController, mintCreativeController } from "~/controllers/creative.controller";
+import { getCreativeByOwnerAddressController, leaseCreativeController, mintCreativeController } from "~/controllers/creative.controller";
 import { uploadFileValidator } from "~/middlewares/certificate.middlewares";
-import { leaseCreativeValidator, mintCreativeValidator } from "~/middlewares/creative.middlewares";
+import { getCreativeByOwnerAddressValidator, leaseCreativeValidator, mintCreativeValidator } from "~/middlewares/creative.middlewares";
 import { wrapRequestHandler } from "~/ultis/handlers";
 
 const creativeRouter = Router()
@@ -11,5 +11,8 @@ creativeRouter.post('/mint', uploadFileValidator, mintCreativeValidator, wrapReq
 
 // POST /api/creative/
 creativeRouter.post('/lease', leaseCreativeValidator, wrapRequestHandler(leaseCreativeController))
+
+// GET /api/creative/get-creative-by-owner-address
+creativeRouter.get('/get-creative-by-owner-address', getCreativeByOwnerAddressValidator, wrapRequestHandler(getCreativeByOwnerAddressController))
 
 export default creativeRouter

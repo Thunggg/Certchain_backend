@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { HTTP_STATUS } from '~/constants/httpStatus'
-import { leaseCreativeService, mintCreativeService } from '~/services/creative.service'
+import { getCreativeByOwnerAddressService, leaseCreativeService, mintCreativeService } from '~/services/creative.service'
 import { ApiSuccess } from '~/ultis/ApiSuccess'
 
 export const mintCreativeController = async (req: Request, res: Response, next: NextFunction) => {
@@ -21,4 +21,14 @@ export const leaseCreativeController = async (req: Request, res: Response, next:
   const result = await leaseCreativeService({ tokenId, user, expires })
 
   res.status(200).json(new ApiSuccess(200, 'Creative leased successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
+}
+
+export const getCreativeByOwnerAddressController = async (req: Request, res: Response, next: NextFunction) => {
+  const ownerAddress = req.body.ownerAddress
+  const page = Number(req.body.page)
+  const limit = Number(req.body.limit)
+
+  const result = await getCreativeByOwnerAddressService({ ownerAddress, page, limit })
+
+  res.status(200).json(new ApiSuccess(200, 'Creatives fetched successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
 }

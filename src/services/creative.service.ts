@@ -235,3 +235,32 @@ export const leaseCreativeService = async ({ tokenId, user, expires }: { tokenId
     status: 'leased'
   }
 }
+
+export const getCreativeByOwnerAddressService = async ({ ownerAddress, page, limit }: { ownerAddress: string; page: number; limit: number }) => {
+  if (!ethers.isAddress(ownerAddress)) {
+    throw new BadRequestError('Owner address is not valid')
+  }
+  const ownerChecksum = ethers.getAddress(ownerAddress)
+
+  const creatives = await CreativeModel.find({ owner: ownerChecksum, status: 'minted' })
+  
+  const filter = { owner: ownerChecksum, status: 'minted' }
+  const [total, items] = await Promise.all([
+    await CreativeModel.countDocuments(filter),
+    await CreativeModel.find(filter)
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ createdAt: -1 })
+      .lean()
+  ])
+
+  return {
+    items,
+    pagination: {
+      page,
+      limit,
+      total,
+      pages: Math.ceil(total / limit) || 1
+    }
+  }
+}

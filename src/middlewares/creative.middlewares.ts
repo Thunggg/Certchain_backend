@@ -60,3 +60,35 @@ export const leaseCreativeValidator = validate(
     ['body']
   )
 )
+
+export const getCreativeByOwnerAddressValidator = validate(
+  checkSchema(
+    {
+      ownerAddress: {
+        notEmpty: {
+          errorMessage: USERS_MESSAGES.OWNER_IS_REQUIRED
+        },
+        isEthereumAddress: {
+          errorMessage: USERS_MESSAGES.OWNER_IS_NOT_VALID
+        }
+      },
+      page: {
+        optional: true,
+        isInt: {
+          options: { min: 1 },
+          errorMessage: 'Page must be a positive integer'
+        },
+        toInt: true
+      },
+      limit: {
+        optional: true,
+        isInt: {
+          options: { min: 1, max: 100 },
+          errorMessage: 'Limit must be an integer between 1 and 100'
+        },
+        toInt: true
+      }
+    },
+    ['body']
+  )
+)
