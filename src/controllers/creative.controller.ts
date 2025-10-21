@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express'
 import { HTTP_STATUS } from '~/constants/httpStatus'
+import { ErrorCodes } from '~/constants/errorCodes'
 import { getCreativeByOwnerAddressService, leaseCreativeService, mintCreativeService } from '~/services/creative.service'
 import { ApiSuccess } from '~/ultis/ApiSuccess'
 
@@ -10,7 +11,17 @@ export const mintCreativeController = async (req: Request, res: Response, next: 
 
   const result = await mintCreativeService({ owner: ownerAddress, issuerName, file })
 
-  res.status(200).json(new ApiSuccess(200, 'Creative minted successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
+  res
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiSuccess(
+        ErrorCodes.SUCCESS,
+        'Creative minted successfully',
+        HTTP_STATUS.OK,
+        result,
+        new Date().toISOString()
+      )
+    )
 }
 
 export const leaseCreativeController = async (req: Request, res: Response, next: NextFunction) => {
@@ -20,7 +31,17 @@ export const leaseCreativeController = async (req: Request, res: Response, next:
 
   const result = await leaseCreativeService({ tokenId, user, expires })
 
-  res.status(200).json(new ApiSuccess(200, 'Creative leased successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
+  res
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiSuccess(
+        ErrorCodes.SUCCESS,
+        'Creative leased successfully',
+        HTTP_STATUS.OK,
+        result,
+        new Date().toISOString()
+      )
+    )
 }
 
 export const getCreativeByOwnerAddressController = async (req: Request, res: Response, next: NextFunction) => {
@@ -30,5 +51,15 @@ export const getCreativeByOwnerAddressController = async (req: Request, res: Res
 
   const result = await getCreativeByOwnerAddressService({ ownerAddress, page, limit })
 
-  res.status(200).json(new ApiSuccess(200, 'Creatives fetched successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
+  res
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiSuccess(
+        ErrorCodes.SUCCESS,
+        'Creatives fetched successfully',
+        HTTP_STATUS.OK,
+        result,
+        new Date().toISOString()
+      )
+    )
 }

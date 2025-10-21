@@ -1,6 +1,7 @@
 import { createHash } from 'crypto'
 import { NextFunction, Request, Response } from 'express'
 import { HTTP_STATUS } from '~/constants/httpStatus'
+import { ErrorCodes } from '~/constants/errorCodes'
 import {
   getCertificateByOwnerAddressService,
   mintCertificateService,
@@ -28,8 +29,16 @@ export const mintCertificateController = async (
   const result = await mintCertificateService({ owner: ownerAddress, file: req.file })
 
   res
-    .status(200)
-    .json(new ApiSuccess(200, 'Certificate minted successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiSuccess(
+        ErrorCodes.SUCCESS,
+        'Certificate minted successfully',
+        HTTP_STATUS.OK,
+        result,
+        new Date().toISOString()
+      )
+    )
 }
 
 export const verifyCertificateController = async (
@@ -45,8 +54,16 @@ export const verifyCertificateController = async (
   if (result.onChainMatch === false) throw new NotFoundError('Certificate not found')
 
   res
-    .status(200)
-    .json(new ApiSuccess(200, 'Certificate verified successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiSuccess(
+        ErrorCodes.SUCCESS,
+        'Certificate verified successfully',
+        HTTP_STATUS.OK,
+        result,
+        new Date().toISOString()
+      )
+    )
 }
 
 export const verifyCertificateByQueryController = async (
@@ -62,8 +79,16 @@ export const verifyCertificateByQueryController = async (
   const result = await verifyCertificateByQueryService({ tokenId, contractAddress, chainId, type })
 
   res
-    .status(200)
-    .json(new ApiSuccess(200, 'Certificate verified successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiSuccess(
+        ErrorCodes.SUCCESS,
+        'Certificate verified successfully',
+        HTTP_STATUS.OK,
+        result,
+        new Date().toISOString()
+      )
+    )
 }
 
 export const getCertificateByOwnerAddressController = async (
@@ -77,5 +102,15 @@ export const getCertificateByOwnerAddressController = async (
   
   const result = await getCertificateByOwnerAddressService({ ownerAddress, page, limit })
 
-  res.status(200).json(new ApiSuccess(200, 'Certificates fetched successfully', HTTP_STATUS.OK, result, new Date().toISOString()))
+  res
+    .status(HTTP_STATUS.OK)
+    .json(
+      new ApiSuccess(
+        ErrorCodes.SUCCESS,
+        'Certificates fetched successfully',
+        HTTP_STATUS.OK,
+        result,
+        new Date().toISOString()
+      )
+    )
 }

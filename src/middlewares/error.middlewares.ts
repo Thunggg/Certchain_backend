@@ -28,12 +28,12 @@ export const errorHandler = (err: unknown, req: Request, res: Response, next: Ne
     })
 
     return res
-      .status(400)
+      .status(HTTP_STATUS.CONFLICT)
       .json(
         new ApiError(
           ErrorCodes.CONFLICT,
           `${field} already exists`,
-          400,
+          HTTP_STATUS.CONFLICT,
           new Date().toISOString(),
           formattedErrors
         ).toResponse()
@@ -63,7 +63,7 @@ export const errorHandler = (err: unknown, req: Request, res: Response, next: Ne
   }
 
   // Mongoose validation error
-  if(err instanceof MongooseError.ValidationError) {
+  if (err instanceof MongooseError.ValidationError) {
     const formattedErrors = Object.keys(err.errors).map((field) => {
       const fieldError = err.errors[field] as MongooseError.ValidatorError
       return {
@@ -83,14 +83,12 @@ export const errorHandler = (err: unknown, req: Request, res: Response, next: Ne
   }
 
   //default error
-  const apiError = new ApiError(
-    ErrorCodes.INTERNAL,
-    (err as ApiErrorResponseWithStatus).msg.message || 'Internal server error',
-    (err as ApiErrorResponseWithStatus).msg.status || HTTP_STATUS.INTERNAL_SERVER_ERROR,
-    new Date().toISOString(),
-    []
-  )
-  return res
-    .status((err as ApiErrorResponseWithStatus).msg.status || HTTP_STATUS.INTERNAL_SERVER_ERROR)
-    .json(apiError.toResponse())
+  const status = typeof (err as any)?.status === 'number' ? (err as any).status : HTTP_STATUS.INTERNAL_SERVER_ERROR
+  const message =
+    (err as any)?.message && typeof (err as any).message === 'string'
+      ? (err as any).message
+      : 'Internal server error'
+
+  const apiError = new ApiError(ErrorCodes.INTERNAL, message, status, new Date().toISOString(), [])
+  return res.status(status).json(apiError.toResponse())
 }
