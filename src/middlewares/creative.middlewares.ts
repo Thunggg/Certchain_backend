@@ -28,33 +28,35 @@ export const leaseCreativeValidator = validate(
   checkSchema(
     {
       tokenId: {
+        in: ['body'],
         notEmpty: {
           errorMessage: USERS_MESSAGES.TOKEN_ID_IS_REQUIRED
         },
-        custom: {
-          options: (value) => {
-            if(!Number.isInteger(value) || value < 0) {
-              throw new BadRequestError(USERS_MESSAGES.TOKEN_ID_IS_NOT_VALID)
-            }
-            return true
-          }
-        }
+        isInt: {
+          options: { min: 0 },
+          errorMessage: USERS_MESSAGES.TOKEN_ID_IS_NOT_VALID
+        },
+        toInt: true
       },
       user: {
+        in: ['body'],
         notEmpty: {
           errorMessage: USERS_MESSAGES.USER_IS_REQUIRED
+        },
+        isEthereumAddress: {
+          errorMessage: USERS_MESSAGES.USER_IS_NOT_VALID
         }
-      },
-      isEthereumAddress: {
-        errorMessage: USERS_MESSAGES.USER_IS_NOT_VALID
       },
       expires: {
+        in: ['body'],
         notEmpty: {
           errorMessage: USERS_MESSAGES.EXPIRES_IS_REQUIRED
-        }
-      },
-      isInt: {
-        errorMessage: USERS_MESSAGES.EXPIRES_IS_NOT_VALID
+        },
+        isInt: {
+          options: { min: 0 },
+          errorMessage: USERS_MESSAGES.EXPIRES_IS_NOT_VALID
+        },
+        toInt: true
       }
     },
     ['body']
@@ -89,6 +91,6 @@ export const getCreativeByOwnerAddressValidator = validate(
         toInt: true
       }
     },
-    ['body']
+    ['query']
   )
 )

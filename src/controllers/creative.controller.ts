@@ -45,9 +45,9 @@ export const leaseCreativeController = async (req: Request, res: Response, next:
 }
 
 export const getCreativeByOwnerAddressController = async (req: Request, res: Response, next: NextFunction) => {
-  const ownerAddress = req.body.ownerAddress
-  const page = Number(req.body.page)
-  const limit = Number(req.body.limit)
+  const ownerAddress = String(req.query.ownerAddress)
+  const page = Number(req.query.page ?? 1)
+  const limit = Number(req.query.limit ?? 10)
 
   const result = await getCreativeByOwnerAddressService({ ownerAddress, page, limit })
 

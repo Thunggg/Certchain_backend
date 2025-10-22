@@ -47,7 +47,8 @@ export const verifyCertificateValidator = validate(
       },
       isInt: {
         errorMessage: USERS_MESSAGES.TOKEN_ID_IS_NOT_VALID
-      }
+      },
+      toInt: true
     }
   })
 )
@@ -62,6 +63,7 @@ export const verifyCertificateByQueryValidator = validate(
         isInt: {
           errorMessage: USERS_MESSAGES.TOKEN_ID_IS_NOT_VALID
         },
+        toInt: true,
         custom: {
           options: (value) => {
             if (value < 0) {
@@ -85,7 +87,8 @@ export const verifyCertificateByQueryValidator = validate(
         },
         isInt: {
           errorMessage: USERS_MESSAGES.CHAIN_ID_IS_NOT_VALID
-        }
+        },
+        toInt: true
       },
       type: {
         optional: true,
@@ -138,6 +141,6 @@ export const getCertificateByOwnerAddressValidator = validate(
         toInt: true
       }
     },
-    ['body']
+    ['query']
   )
 )

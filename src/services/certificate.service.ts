@@ -131,7 +131,7 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
     const e = err as EthersError
 
     if (e.code === 'INVALID_ARGUMENT' && e.message === 'address') {
-      throw new BadRequestError('Onwner address is not exists')
+      throw new BadRequestError('Owner address does not exist')
     }
 
     throw new BadRequestError('Minting certificate failed!')
@@ -314,11 +314,13 @@ export const getCertificateByOwnerAddressService = async ({
   const certificates = await CertificateModel.find({ owner: ownerChecksum, status: 'minted' })
 
   const filter = { owner: ownerChecksum, status: 'minted' }
+  const safePage = Number.isFinite(page) && page > 0 ? page : 1
+  const safeLimit = Number.isFinite(limit) && limit > 0 ? limit : 10
   const [total, items] = await Promise.all([
     await CertificateModel.countDocuments(filter),
     await CertificateModel.find(filter)
-      .skip((page - 1) * limit)
-      .limit(limit)
+      .skip((safePage - 1) * safeLimit)
+      .limit(safeLimit)
       .sort({ createdAt: -1 })
       .lean()
   ])
@@ -326,10 +328,10 @@ export const getCertificateByOwnerAddressService = async ({
   return {
     items,
     pagination: {
-      page,
-      limit,
+      page: safePage,
+      limit: safeLimit,
       total,
-      pages: Math.ceil(total / limit) || 1
+      pages: Math.ceil(total / safeLimit) || 1
     }
   }
 }
