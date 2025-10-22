@@ -1,0 +1,7 @@
+{
+  "tokenId": 123,
+  "contractAddress": "0x1234567890abcdef1234567890abcdef12345678",
+  "chainId": 11155111,
+  "type": "sbt"
+}
+

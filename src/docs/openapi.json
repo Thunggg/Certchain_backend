@@ -1,0 +1,169 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Blockchain Certificate System API",
+    "version": "1.0.0",
+    "description": "REST API for minting and verifying certificate NFTs (SBT)"
+  },
+  "servers": [
+    { "url": "http://localhost:3000/api/", "description": "Local" }
+  ],
+  "paths": {
+    "/certificate/mint": {
+      "post": {
+        "summary": "Mint a certificate (SBT)",
+        "operationId": "mintCertificate",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "owner": { "type": "string", "description": "Owner wallet address (EVM)" },
+                  "file": { "type": "string", "format": "binary", "description": "File to mint (image/pdf)" }
+                },
+                "required": ["owner", "file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Minted successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ApiSuccess_MintCertificate" }
+              }
+            }
+          },
+          "400": { "description": "Bad request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "500": { "description": "Server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    },
+    "/certificate/verify": {
+      "post": {
+        "summary": "Verify certificate by uploading file",
+        "operationId": "verifyCertificateByFile",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tokenId": { "type": "integer", "format": "int64", "nullable": true },
+                  "file": { "type": "string", "format": "binary" }
+                },
+                "required": ["file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verification result",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiSuccess_VerifyByFile" } } }
+          },
+          "400": { "description": "Bad request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "500": { "description": "Server error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      },
+      "get": {
+        "summary": "Verify certificate by QR/query params",
+        "operationId": "verifyCertificateByQuery",
+        "parameters": [
+          { "name": "tokenId", "in": "query", "required": true, "schema": { "type": "integer", "format": "int64" } },
+          { "name": "contractAddress", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "chainId", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "type", "in": "query", "required": false, "schema": { "type": "string", "enum": ["sbt", "4907"] } },
+          { "name": "sig", "in": "query", "required": false, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Verification result", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ApiSuccess_VerifyByQuery" } } } },
+          "400": { "description": "Bad request", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "404": { "description": "Not found", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } },
+          "502": { "description": "Blockchain error", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ErrorResponse" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiSuccess_MintCertificate": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer" },
+          "message": { "type": "string" },
+          "status": { "type": "integer" },
+          "timestamp": { "type": "string" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "tokenId": { "type": "string" },
+              "publishedHash": { "type": "string" },
+              "originalHash": { "type": "string" },
+              "tokenURI": { "type": "string" },
+              "transactionHash": { "type": "string" },
+              "qrUrl": { "type": "string" },
+              "qrImage": { "type": "string" }
+            }
+          }
+        }
+      },
+      "ApiSuccess_VerifyByFile": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer" },
+          "message": { "type": "string" },
+          "status": { "type": "integer" },
+          "timestamp": { "type": "string" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "tokenId": { "type": "integer" },
+              "hash": { "type": "string" },
+              "typeHash": { "type": "string", "enum": ["original", "published"] },
+              "onChainMatch": { "type": "boolean" },
+              "tokenURI": { "type": "string" }
+            }
+          }
+        }
+      },
+      "ApiSuccess_VerifyByQuery": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer" },
+          "message": { "type": "string" },
+          "status": { "type": "integer" },
+          "timestamp": { "type": "string" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "tokenId": { "type": "integer" },
+              "contractAddress": { "type": "string" },
+              "chainId": { "type": "integer" },
+              "owner": { "type": "string" },
+              "tokenURI": { "type": "string" },
+              "status": { "type": "string" }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "code": { "type": "integer" },
+          "message": { "type": "string" },
+          "status": { "type": "integer" },
+          "timestamp": { "type": "string" },
+          "errors": { "type": "array", "items": { "type": "object", "properties": { "field": { "type": "string" }, "message": { "type": "string" }, "value": {} } } }
+        }
+      }
+    }
+  }
+}
+
+
