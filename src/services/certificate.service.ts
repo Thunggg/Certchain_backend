@@ -9,7 +9,23 @@ import type { EthersError } from 'ethers'
 import QRCode from 'qrcode'
 import { URLSearchParams } from 'url'
 
-export const mintCertificateService = async ({ owner, file }: { owner: string; file: Express.Multer.File }) => {
+export const mintCertificateService = async ({
+  owner,
+  file,
+  issuerName,
+  certificateName,
+  description,
+  issueDate,
+  recipientWallet
+}: {
+  owner: string
+  file: Express.Multer.File
+  issuerName?: string
+  certificateName?: string
+  description?: string
+  issueDate?: string
+  recipientWallet?: string
+}) => {
   if (file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
     throw new BadRequestError('File type not supported')
   }
@@ -52,15 +68,27 @@ export const mintCertificateService = async ({ owner, file }: { owner: string; f
   const imageUrl = isImage ? fileUrl : undefined
   const animationUrl = !isImage ? fileUrl : undefined
 
+  const parsedIssueDate = (() => {
+    if (!issueDate) return new Date().toISOString()
+    const d = new Date(issueDate)
+    return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString()
+  })()
+  const name = certificateName?.trim() || 'Certificate'
+  const desc = description?.trim() || 'Certificate'
+  const issuer = issuerName?.trim() || 'FPT University'
+  const recipient = recipientWallet && ethers.isAddress(recipientWallet) ? ethers.getAddress(recipientWallet) : undefined
+
   const metadata = {
-    name: 'Certificate',
-    description: 'Certificate',
+    name,
+    description: desc,
     image: imageUrl,
     animation_url: animationUrl,
     attributes: [
-      { trait_type: 'issuerName', value: 'FPT University' },
+      { trait_type: 'issuerName', value: issuer },
       { trait_type: 'issuerWallet', value: wallet.address as string },
-      { trait_type: 'issueDate', value: new Date().toISOString() },
+      { trait_type: 'ownerWallet', value: ownerChecksum },
+      ...(recipient ? [{ trait_type: 'recipientWallet', value: recipient }] : []),
+      { trait_type: 'issueDate', value: parsedIssueDate },
       { trait_type: 'fileHash', value: watermarkedFileHashBytes32 },
       { trait_type: 'type', value: 'certificate' }
     ],

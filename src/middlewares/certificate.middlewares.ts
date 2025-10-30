@@ -32,6 +32,60 @@ export const mintCertificateValidator = validate(
         isEthereumAddress: {
           errorMessage: USERS_MESSAGES.OWNER_IS_NOT_VALID
         }
+      },
+      issuerName: {
+        optional: true,
+        isString: {
+          errorMessage: USERS_MESSAGES.ISSUER_NAME_IS_NOT_STRING
+        },
+        trim: true,
+        isLength: {
+          options: { min: 1, max: 200 },
+          errorMessage: 'Issuer name length must be 1-200 characters'
+        }
+      },
+      certificateName: {
+        optional: true,
+        isString: {
+          errorMessage: 'Certificate name must be a string'
+        },
+        trim: true,
+        isLength: {
+          options: { min: 1, max: 200 },
+          errorMessage: 'Certificate name length must be 1-200 characters'
+        }
+      },
+      description: {
+        optional: true,
+        isString: {
+          errorMessage: 'Description must be a string'
+        },
+        trim: true,
+        isLength: {
+          options: { max: 1000 },
+          errorMessage: 'Description must be at most 1000 characters'
+        }
+      },
+      issueDate: {
+        optional: true,
+        custom: {
+          options: (value) => {
+            const date = new Date(value)
+            if (Number.isNaN(date.getTime())) {
+              throw new BadRequestError('Issue date is not valid')
+            }
+            if (date.getTime() > Date.now()) {
+              throw new BadRequestError('Issue date cannot be in the future')
+            }
+            return true
+          }
+        }
+      },
+      recipientWallet: {
+        optional: true,
+        isEthereumAddress: {
+          errorMessage: 'Recipient wallet is not valid'
+        }
       }
     },
     ['body']

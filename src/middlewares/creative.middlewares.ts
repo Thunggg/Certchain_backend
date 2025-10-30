@@ -12,11 +12,52 @@ export const mintCreativeValidator = validate(
         }
       },
       issuerName: {
-        notEmpty: {
-          errorMessage: USERS_MESSAGES.ISSUER_NAME_IS_REQUIRED
-        },
+        optional: true,
         isString: {
           errorMessage: USERS_MESSAGES.ISSUER_NAME_IS_NOT_STRING
+        },
+        custom: {
+          options: (_value, { req }) => {
+            const hasIssuer = typeof req.body.issuerName === 'string' && req.body.issuerName.trim().length > 0
+            const hasOwnerName = typeof req.body.ownerName === 'string' && req.body.ownerName.trim().length > 0
+            if (!hasIssuer && !hasOwnerName) {
+              throw new BadRequestError(USERS_MESSAGES.ISSUER_NAME_IS_REQUIRED)
+            }
+            return true
+          }
+        }
+      },
+      ownerName: {
+        optional: true,
+        isString: {
+          errorMessage: USERS_MESSAGES.ISSUER_NAME_IS_NOT_STRING
+        },
+        trim: true,
+        isLength: {
+          options: { min: 1, max: 200 },
+          errorMessage: 'Owner name length must be 1-200 characters'
+        }
+      },
+      title: {
+        optional: true,
+        isString: {
+          errorMessage: 'Title must be a string'
+        },
+        trim: true,
+        isLength: {
+          options: { min: 1, max: 200 },
+          errorMessage: 'Title length must be 1-200 characters'
+        }
+      },
+      description: {
+        optional: true,
+        isString: {
+          errorMessage: 'Description must be a string'
+        },
+        trim: true,
+        isLength: {
+          options: { max: 1000 },
+          errorMessage: 'Description must be at most 1000 characters'
         }
       }
     },

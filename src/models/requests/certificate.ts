@@ -2,6 +2,11 @@ import { ParsedQs } from 'qs'
 
 export interface mintCertificateReqBody {
   owner: string
+  issuerName?: string
+  certificateName?: string
+  description?: string
+  issueDate?: string
+  recipientWallet?: string
 }
 
 export interface verifyCertificateReqBody {

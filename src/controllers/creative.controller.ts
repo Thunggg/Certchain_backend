@@ -7,9 +7,11 @@ import { ApiSuccess } from '~/ultis/ApiSuccess'
 export const mintCreativeController = async (req: Request, res: Response, next: NextFunction) => {
   const file = req.file as Express.Multer.File
   const ownerAddress = req.body.owner
-  const issuerName = req.body.issuerName
+  const issuerName = req.body.issuerName ?? req.body.ownerName
+  const title = req.body.title
+  const description = req.body.description
 
-  const result = await mintCreativeService({ owner: ownerAddress, issuerName, file })
+  const result = await mintCreativeService({ owner: ownerAddress, issuerName, title, description, file })
 
   res
     .status(HTTP_STATUS.OK)

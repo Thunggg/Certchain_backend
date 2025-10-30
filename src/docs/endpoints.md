@@ -8,8 +8,13 @@ Base URL: http://localhost:3000/api/
 - URL: `/certificate/mint`
 - Auth: No
 - Input (multipart/form-data):
-  - owner: string (EVM address)
-  - file: binary (image/pdf)
+  - owner: string (EVM address, required)
+  - file: binary (image/pdf, required)
+  - issuerName: string (optional)
+  - certificateName: string (optional)
+  - description: string (optional)
+  - issueDate: string ISO-8601 (optional, not in the future)
+  - recipientWallet: string (optional, EVM address)
 - Output (200):
 
 ```json
@@ -26,6 +31,37 @@ Base URL: http://localhost:3000/api/
     "transactionHash": "0x...",
     "qrUrl": "https://.../verify?tokenId=123&contract=0x...&chain=11155111&type=sbt",
     "qrImage": "data:image/png;base64,..."
+  }
+}
+```
+
+### 1b) Mint Creative (ERC-4907)
+
+- Method: POST
+- URL: `/creative/mint`
+- Auth: No
+- Input (multipart/form-data):
+  - owner: string (EVM address, required)
+  - issuerName: string (required)
+  - file: binary (image/pdf, required)
+  - title: string (optional)
+  - description: string (optional)
+- Output (200):
+
+```json
+{
+  "code": 200,
+  "message": "Creative minted successfully",
+  "status": 200,
+  "timestamp": "2025-01-01T00:00:00.000Z",
+  "data": {
+    "tokenId": "123",
+    "publishedHash": "0x...",
+    "originalHash": "0x...",
+    "tokenURI": "https://res.cloudinary.com/.../metadata/abc.json",
+    "transactionHash": "0x...",
+    "qrUrl": "",
+    "qrImage": ""
   }
 }
 ```

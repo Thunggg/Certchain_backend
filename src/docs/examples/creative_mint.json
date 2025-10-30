@@ -1,0 +1,7 @@
+{
+  "owner": "0x1234567890abcdef1234567890abcdef12345678",
+  "issuerName": "Alice",
+  "title": "Sunset Painting",
+  "description": "A digital artwork of a sunset.",
+  "file": "<binary>"
+}

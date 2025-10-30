@@ -25,8 +25,21 @@ export const mintCertificateController = async (
 ) => {
   if (!req.file) throw new NotFoundError('File not found')
   const ownerAddress = req.body.owner
+  const issuerName = req.body.issuerName
+  const certificateName = req.body.certificateName
+  const description = req.body.description
+  const issueDate = req.body.issueDate
+  const recipientWallet = req.body.recipientWallet
 
-  const result = await mintCertificateService({ owner: ownerAddress, file: req.file })
+  const result = await mintCertificateService({
+    owner: ownerAddress,
+    file: req.file,
+    issuerName,
+    certificateName,
+    description,
+    issueDate,
+    recipientWallet
+  })
 
   res
     .status(HTTP_STATUS.OK)

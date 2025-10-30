@@ -6,7 +6,19 @@ import { CreativeModel } from "~/models/schemas/Creative";
 import { BadRequestError } from "~/ultis/CustomErrors";
 import { addWatermark } from "~/ultis/Watermark";
 
-export const mintCreativeService = async ({ owner, issuerName, file }: { owner: string; issuerName: string; file: Express.Multer.File }) => {
+export const mintCreativeService = async ({
+  owner,
+  issuerName,
+  title,
+  description,
+  file
+}: {
+  owner: string
+  issuerName: string
+  title?: string
+  description?: string
+  file: Express.Multer.File
+}) => {
   if (file.mimetype !== 'application/pdf' && !file.mimetype.startsWith('image/')) {
     throw new BadRequestError('File type not supported')
   }
@@ -50,8 +62,8 @@ export const mintCreativeService = async ({ owner, issuerName, file }: { owner: 
   const animationUrl = !isImage ? fileUrl : undefined
 
     const metadata = {
-      name: 'Creative',
-      description: 'Creative',
+      name: (title?.trim() || 'Creative'),
+      description: (description?.trim() || 'Creative'),
       image: imageUrl,
       animation_url: animationUrl,
       attributes: [
